@@ -3,14 +3,16 @@
 module ObjExport where
 
 import Control.Arrow
+import Control.Monad
 import Data.Binary
+import qualified Data.ByteString as B
+import Data.ByteString.Char8 ()
 import Data.List
 import qualified Data.List.Key as K
 import qualified Data.IntMap as I
 import qualified Data.IntSet as IS
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Data.Vector as V
 import System.FilePath
 import Text.Printf
 import Region
@@ -20,7 +22,7 @@ data Orientation = E | W | N | S | T | B deriving (Enum, Show)
 type Location = (Int, Int, Int)
 type Face = [(Location, Int, Int)]
 type Coord = (Int, Int)
-type Chunk = (V.Vector Word8, V.Vector Word8)
+type Chunk = (B.ByteString, B.ByteString)
 
 chunkW, chunkH :: Int
 (chunkW, chunkH) = (16, 128)
@@ -28,10 +30,12 @@ chunkW, chunkH :: Int
 export :: FilePath -> FilePath -> [Coord] -> IO ()
 export regionDir file chunks = do
     world <- loadWorld regionDir chunks
-    let (vertices, geom) = foldl' (chunkGeom world) (M.empty, []) chunks
+    (vertices, geom) <- foldM (chunkGeom world) (M.empty, []) chunks
+    putStrLn "Writing .obj file..."
     writeFile file $ printf "mtllib minecraft.mtl\n\n%s\n%s\n%s\n%s"
         (unlines . map ((\(x,y,z) -> printf "v %d %d %d" x y z) . snd) .
-         sort . map (\(a,b) -> (b,a)) $ M.assocs vertices) texcoords normals (unlines geom) where
+         sort . map (\(a,b) -> (b,a)) $ M.assocs vertices) texcoords normals geom
+    putStrLn "Done." where
     texcoords = "vt 0 0\nvt 1 0\nvt 1 1\nvt 0 1\n" :: String
     normals   = "vn 1 0 0\nvn -1 0 0\nvn 0 1 0\nvn 0 -1 0\nvn 0 0 1\nvn 0 0 -1\n" :: String
 
@@ -43,14 +47,16 @@ loadWorld regionDir = fmap (M.fromList . concat) .
                                       chunkData chunk)) $ I.assocs region) .
     S.toList . S.fromList . map (\(cX, cZ) -> (div cX 32, div cZ 32))
 
-chunkData :: NBT -> (V.Vector Word8, V.Vector Word8)
+chunkData :: NBT -> (B.ByteString, B.ByteString)
 chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
                  getArray $ navigate ["Level", "Data"] nbt)
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
-chunkGeom :: M.Map Coord Chunk -> (M.Map Location Int, [String]) -> Coord ->
-             (M.Map Location Int, [String])
-chunkGeom world (!verts, !geoms) (cX, cZ) = (verts', (unlines $ (printf "g chunk.%d.%d" cX cZ) : geom) : geoms) where
+chunkGeom :: M.Map Coord Chunk -> (M.Map Location Int, String) -> Coord ->
+             IO (M.Map Location Int, String)
+chunkGeom !world (!verts, !geoms) (cX, cZ) = do
+    putStrLn $ printf "Processing chunk (%d, %d). Debug: %d %d" cX cZ (M.size verts) (length geoms)
+    return (verts', (unlines $ (printf "g chunk.%d.%d" cX cZ) : geom) ++ geoms) where
     (verts', geom) = foldl' (\a matGroup -> second (printf "\nusemtl %s\n" (fst $ head matGroup) :) $
         foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (verts, []) .
         groupOn fst $ concat [ blockGeometry world (cX * chunkW + x, y, cZ * chunkW + z)
@@ -75,11 +81,11 @@ blockGeometry world (x,y,z) = maybe [] (\blockID -> case blockID of
              filter (maybe True (\(t',_) -> t /= t' && IS.notMember (fromIntegral t') solidIDs) .
                  getBlock world . snd) [ (S, (x+1,y,z)), (N, (x-1,y,z)), (T, (x,y+1,z))
                                        , (B, (x,y-1,z)), (W, (x,y,z+1)), (E, (x,y,z-1))]) $
-    getBlock world (x,y,z)
+             getBlock world (x,y,z)
 
 getBlock :: M.Map Coord Chunk -> Location -> Maybe (Word8, Word8)
 getBlock world (x,y,z) = if y < 0 || y >= chunkH then Nothing else
-    fmap ((V.! blockOffset) *** (V.! dataOffset)) $ M.lookup (div x chunkW, div z chunkW) world where
+    fmap ((flip B.index $ fromIntegral blockOffset) *** (flip B.index $ fromIntegral dataOffset)) $ M.lookup (div x chunkW, div z chunkW) world where
     blockOffset = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
     dataOffset  = div (y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH) 2
 

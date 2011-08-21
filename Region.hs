@@ -4,66 +4,64 @@ import qualified Codec.Compression.GZip as G
 import Codec.Compression.Zlib
 import Control.Applicative
 import Control.Monad
-import Data.Binary
-import Data.Binary.IEEE754
-import qualified Data.ByteString.Lazy as B
+import Data.Binary.Strict.Get
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
-import Data.Int
 import qualified Data.IntMap as I
 import Data.List
-import qualified Data.Vector as V
+import Data.Word
 
-data Region = Region (I.IntMap NBT) deriving Show
-data NBT = NBT Tag deriving Show
-data Tag = TAG_End | TAG_Byte Word8 | TAG_Short Int16 | TAG_Int Int32
-         | TAG_Long Int64 | TAG_Float Float | TAG_Double Double
-         | TAG_Byte_Array (V.Vector Word8) | TAG_String B.ByteString
-         | TAG_List [Tag] | TAG_Compound [(B.ByteString, Tag)] deriving Show
+data Region = Region !(I.IntMap NBT) deriving Show
+data NBT = NBT !Tag deriving Show
+data Tag = TAG_End | TAG_Byte !Word8 | TAG_Short !Word16 | TAG_Int !Word32
+         | TAG_Long !Word64 | TAG_Float !Float | TAG_Double !Double
+         | TAG_Byte_Array !B.ByteString | TAG_String !B.ByteString
+         | TAG_List ![Tag] | TAG_Compound ![(B.ByteString, Tag)] deriving Show
 
-instance Binary NBT where
-    put = undefined
-    get = NBT <$> (byte >> string >> tag 10)
+getNBT :: Get NBT
+getNBT = NBT <$> (byte >> string >> tag 10)
 
-instance Binary Region where
-    put = undefined
-    get = do cLengths <- (\y -> zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
-                                        (tail y ++ [(\((o,l),i) -> ((o+l,l),i)) $ last y]) y) .
-                         sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (flip divMod 256) <$> 
-                         replicateM 1024 int <* replicateM 1024 int
-             Region . I.fromList <$> mapM (\(i, y) -> ((,) i) . decode <$> chunk y) cLengths
+getRegion :: Get Region
+getRegion = do cLengths <- (\y -> zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
+                                          (tail y ++ [(\((o,l),i) -> ((o+l,l),i)) $ last y]) y) .
+                           sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (flip divMod 256) <$> 
+                           replicateM 1024 int <* replicateM 1024 int
+               Region . I.fromList <$> mapM (\(i, y) -> ((,) i) . run getNBT <$> chunk y) cLengths
 
 tag :: Word8 -> Get Tag
 tag  0 = return TAG_End
 tag  1 = TAG_Byte <$> byte
 tag  2 = TAG_Short <$> short
 tag  3 = TAG_Int <$> int
-tag  4 = TAG_Long <$> get
-tag  5 = TAG_Float <$> getFloat32be
-tag  6 = TAG_Double <$> getFloat64be
-tag  7 = TAG_Byte_Array . V.fromList <$> (bytes =<< int)
+tag  4 = TAG_Long <$> getWord64be
+tag  5 = TAG_Float <$> getFloat32host
+tag  6 = TAG_Double <$> getFloat64host
+tag  7 = TAG_Byte_Array <$> (getByteString . fromIntegral =<< int)
 tag  8 = TAG_String <$> string
 tag  9 = TAG_List <$> join ((tag <$> byte) <**> (replicateM . fromIntegral <$> int))
 tag 10 = TAG_Compound <$> compound
 tag  n = error $ "Unrecognized tag type: " ++ show n
 
-byte = get :: Get Word8
-short = get :: Get Int16
-int = get :: Get Int32
-string = B.pack <$> (bytes =<< short)
+byte = getWord8
+short = getWord16be
+int = getWord32be
+string = (getByteString . fromIntegral =<< short)
 compound = byte >>= \tagType -> if tagType == 0 then return [] else 
     (:) <$> ((,) <$> string <*> tag tagType) <*> compound
 
-bytes :: Integral a => a -> Get [Word8]
-bytes = flip replicateM byte . fromIntegral
-
 chunk :: Integral a => a -> Get B.ByteString
-chunk len = int *> byte *> (decompress . B.pack <$> (bytes $ len * 4096 - 5))
+chunk len = int *> byte *> (B.concat . BL.toChunks . decompress . BL.fromChunks . return <$>
+                                (getByteString . fromIntegral $ len * 4096 - 5))
 
 loadRegion :: FilePath -> IO Region
-loadRegion = decodeFile
+loadRegion file = run getRegion <$> B.readFile file
+
+run :: Get a -> B.ByteString -> a
+run p = either error id . fst . runGet p
 
 loadNBT :: FilePath -> IO NBT
-loadNBT file = decode . G.decompress <$> B.readFile file
+loadNBT file = run getNBT . B.concat . BL.toChunks . G.decompress <$> BL.readFile file
 
 navigate :: [B.ByteString] -> NBT -> Maybe Tag
 navigate xs (NBT ct) = foldl (\a x -> ref x =<< a) (Just ct) xs where

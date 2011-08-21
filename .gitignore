@@ -1,2 +1,7 @@
-bin/*
+*.bat
 *.exe
+*.aux
+*.hp
+*.prof
+*.ps
+bin/*
