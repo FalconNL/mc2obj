@@ -1,0 +1,135 @@
+newmtl Grass_Top
+Kd 0.3216 0.4510 0.1725
+map_Kd tex/grass_top.png
+
+newmtl Stone
+Kd 0.4902 0.4902 0.4902
+map_Kd tex/stone.png
+
+newmtl Dirt
+Kd 0.5255 0.3765 0.2627
+map_Kd tex/dirt.png
+
+newmtl Grass_Side
+Kd 0.3216 0.4510 0.1725
+map_Kd tex/grass_side.png
+
+newmtl Cobblestone
+Kd 0.4588 0.4588 0.4588
+map_Kd tex/cobblestone.png
+
+newmtl Bedrock
+Kd 0.3294 0.3294 0.3294
+map_Kd tex/bedrock.png
+
+newmtl Water
+Kd 0.0000 0.6039 1.0000
+map_Kd tex/water.png
+
+newmtl Lava
+Kd 0.9608 0.2588 0.0000
+map_Kd tex/lava.png
+
+newmtl Sand
+Kd 0.8549 0.8235 0.6196
+map_Kd tex/sand.png
+
+newmtl Gravel
+Kd 0.5333 0.4980 0.4941
+map_Kd tex/gravel.png
+
+newmtl Ore_Gold
+Kd 0.5647 0.5490 0.4902
+map_Kd tex/ore_gold.png
+
+newmtl Ore_Iron
+Kd 0.5333 0.5137 0.4980
+map_Kd tex/ore_iron.png
+
+newmtl Ore_Coal
+Kd 0.4510 0.4510 0.4510
+map_Kd tex/ore_coal.png
+
+newmtl Log_Oak
+Kd 0.4000 0.3176 0.1961
+map_Kd tex/log_oak.png
+
+newmtl Leaves
+Kd 0.1098 0.2784 0.0196
+map_Kd tex/leaf_oak.png
+
+newmtl Ore_Lapis
+Kd 0.4000 0.4392 0.5294
+map_Kd tex/ore_lapis.png
+
+newmtl Sandstone_Top
+Kd 0.8353 0.8039 0.5804
+map_Kd tex/sandstone_top.png
+
+newmtl Sandstone_Side
+Kd 0.8353 0.8039 0.5804
+map_Kd tex/sandstone_side.png
+
+newmtl Sandstone_Bottom
+Kd 0.8353 0.8039 0.5804
+map_Kd tex/sandstone_bottom.png
+
+newmtl Moss
+Kd 0.3569 0.4235 0.3569
+map_Kd tex/moss.png
+
+newmtl Obsidian
+Kd 0.0784 0.0706 0.1176
+map_Kd tex/obsidian.png
+
+newmtl Spawner
+Kd 0.1058 0.3294 0.4862
+map_Kd tex/spawner.png
+
+newmtl Chest_Top
+Kd 0.5137 0.3686 0.1451
+map_Kd tex/chest_top.png
+
+newmtl Chest_Side
+Kd 0.5137 0.3686 0.1451
+map_Kd tex/chest_side.png
+
+newmtl Ore_Diamond
+Kd 0.5098 0.5490 0.5608
+map_Kd tex/ore_diamond.png
+
+newmtl Ore_Redstone
+Kd 0.5216 0.4196 0.4196
+map_Kd tex/ore_redstone.png
+
+newmtl Snow_Side
+Kd 0.9412 0.9843 0.9843
+map_Kd tex/snow_side.png
+
+newmtl Snow
+Kd 0.9412 0.9843 0.9843
+map_Kd tex/snow.png
+
+newmtl Ice
+Kd 0.4902 0.6824 1.0000
+map_Kd tex/ice.png
+
+newmtl Clay
+Kd 0.6235 0.6471 0.6941
+map_Kd tex/clay.png
+
+newmtl Pumpkin_Top
+Kd 0.7725 0.4745 0.0941
+map_Kd tex/pumpkin_top.png
+
+newmtl Pumpkin_Side
+Kd 0.7725 0.4745 0.0941
+map_Kd tex/pumpkin_side.png
+
+newmtl Pumpkin_Face
+Kd 0.7725 0.4745 0.0941
+map_Kd tex/pumpkin_face.png
+
+newmtl Unknown
+Kd 1.000 0.0000 1.0000
+map_Kd tex/unknown.png
