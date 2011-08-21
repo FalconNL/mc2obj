@@ -1,5 +1,4 @@
-module Region (Region(..), NBT(..), Tag(..),
-       getChunk, loadNBT, loadRegion, navigate) where
+module Region (Region(..), NBT(..), Tag(..), loadNBT, loadRegion, navigate) where
 
 import qualified Codec.Compression.GZip as G
 import Codec.Compression.Zlib
@@ -27,10 +26,11 @@ instance Binary NBT where
 
 instance Binary Region where
     put = undefined
-    get = do cLengths <- (\y -> zipWith (-) (map fst (tail y) ++ [uncurry (+) $ last y]) (map fst y)) .
-                         sort . filter ((> 0) . fst) . map (flip divMod 256) <$> 
+    get = do cLengths <- (\y -> zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
+                                        (tail y ++ [(\((o,l),i) -> ((o+l,l),i)) $ last y]) y) .
+                         sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (flip divMod 256) <$> 
                          replicateM 1024 int <* replicateM 1024 int
-             Region . I.fromList . zip [0..] <$> mapM ((decode <$>) . chunk) cLengths
+             Region . I.fromList <$> mapM (\(i, y) -> ((,) i) . decode <$> chunk y) cLengths
 
 tag :: Word8 -> Get Tag
 tag  0 = return TAG_End
@@ -55,6 +55,8 @@ compound = byte >>= \tagType -> if tagType == 0 then return [] else
 
 bytes :: Integral a => a -> Get [Word8]
 bytes = flip replicateM byte . fromIntegral
+
+chunk :: Integral a => a -> Get B.ByteString
 chunk len = int *> byte *> (decompress . B.pack <$> (bytes $ len * 4096 - 5))
 
 loadRegion :: FilePath -> IO Region
@@ -67,6 +69,3 @@ navigate :: [B.ByteString] -> NBT -> Maybe Tag
 navigate xs (NBT ct) = foldl (\a x -> ref x =<< a) (Just ct) xs where
     ref k (TAG_Compound ts) = lookup k ts
     ref _ _                 = Nothing
-
-getChunk :: Int -> Int -> Region -> NBT
-getChunk x z (Region cs) = cs I.! (mod x 32 + 32 * mod z 32)

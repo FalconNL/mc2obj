@@ -25,6 +25,7 @@ map_Kd tex/bedrock.png
 newmtl Water
 Kd 0.0000 0.6039 1.0000
 map_Kd tex/water.png
+d 0.5
 
 newmtl Lava
 Kd 0.9608 0.2588 0.0000
@@ -54,7 +55,7 @@ newmtl Log_Oak
 Kd 0.4000 0.3176 0.1961
 map_Kd tex/log_oak.png
 
-newmtl Leaves
+newmtl Leaf_Oak
 Kd 0.1098 0.2784 0.0196
 map_Kd tex/leaf_oak.png
 
