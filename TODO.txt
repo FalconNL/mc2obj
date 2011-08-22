@@ -1,0 +1,5 @@
+move splitting data vals to parser
+fix map in chunkGeometry (figure out the right bytestring sections to combine, change lookup to var + 1 and mod (var + 2))
+make vertices chunk-specific to save on output size (chunkGeom becomes world -> ByteString -> Coord -> ByteString)
+parallelize program by making chunkGeom world -> Coord -> ByteString, parMapping chunkGeom over chunks (using dph-base or repa)
+    and B.concatting at the end

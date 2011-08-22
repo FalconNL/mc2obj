@@ -4,15 +4,15 @@ module ObjExport where
 
 import Control.Arrow
 import Control.Monad
-import Data.Binary
 import qualified Data.ByteString as B
-import Data.ByteString.Char8 ()
+import qualified Data.ByteString.Char8 as BC
 import Data.List
 import qualified Data.List.Key as K
 import qualified Data.IntMap as I
 import qualified Data.IntSet as IS
 import qualified Data.Map as M
 import qualified Data.Set as S
+import Data.Word
 import System.FilePath
 import Text.Printf
 import Region
@@ -30,11 +30,12 @@ chunkW, chunkH :: Int
 export :: FilePath -> FilePath -> [Coord] -> IO ()
 export regionDir file chunks = do
     world <- loadWorld regionDir chunks
-    (vertices, geom) <- foldM (chunkGeom world) (M.empty, []) chunks
+    (vertices, geom) <- foldM (chunkGeom world) (M.empty, B.empty) chunks
     putStrLn "Writing .obj file..."
-    writeFile file $ printf "mtllib minecraft.mtl\n\n%s\n%s\n%s\n%s"
-        (unlines . map ((\(x,y,z) -> printf "v %d %d %d" x y z) . snd) .
-         sort . map (\(a,b) -> (b,a)) $ M.assocs vertices) texcoords normals geom
+    let newVerts = B.concat . M.elems $ M.foldrWithKey (\(x,y,z) i vs ->
+            M.insert i (BC.pack $ printf "v %d %d %d\n" x y z) vs) M.empty vertices
+    B.writeFile file $ "mtllib minecraft.mtl\n\n" `B.append` newVerts `B.append`
+        (BC.pack $ printf "\n%s\n%s\n" texcoords normals) `B.append` geom
     putStrLn "Done." where
     texcoords = "vt 0 0\nvt 1 0\nvt 1 1\nvt 0 1\n" :: String
     normals   = "vn 1 0 0\nvn -1 0 0\nvn 0 1 0\nvn 0 -1 0\nvn 0 0 1\nvn 0 0 -1\n" :: String
@@ -52,42 +53,38 @@ chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
                  getArray $ navigate ["Level", "Data"] nbt)
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
-chunkGeom :: M.Map Coord Chunk -> (M.Map Location Int, String) -> Coord ->
-             IO (M.Map Location Int, String)
-chunkGeom !world (!verts, !geoms) (cX, cZ) = do
-    putStrLn $ printf "Processing chunk (%d, %d). Debug: %d %d" cX cZ (M.size verts) (length geoms)
-    return (verts', (unlines $ (printf "g chunk.%d.%d" cX cZ) : geom) ++ geoms) where
-    (verts', geom) = foldl' (\a matGroup -> second (printf "\nusemtl %s\n" (fst $ head matGroup) :) $
-        foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (verts, []) .
-        groupOn fst $ concat [ blockGeometry world (cX * chunkW + x, y, cZ * chunkW + z)
-                             | x <- [0..chunkW - 1], y <- [0..chunkH - 1], z <- [0..chunkW - 1]]
+chunkGeom :: M.Map Coord Chunk -> (M.Map Location Int, B.ByteString) -> Coord ->
+             IO (M.Map Location Int, B.ByteString)
+chunkGeom world (verts, geoms) (cX, cZ) = do
+    let blockLookup = foldl1' M.union [ M.fromList . zip [(cX * chunkW + x,y,cZ * chunkW + z) | x <- [0..chunkW-1], z <- [0..chunkW-1], y <- [0..chunkH-1] ] . B.zip blockIDs $ B.concatMap (\i -> B.pack [div i 16, mod i 16]) dataVals
+                      | Just (blockIDs, dataVals) <- map (`M.lookup` world) [(cX, cZ), (cX-1, cZ), (cX+1, cZ), (cX, cZ-1), (cX, cZ+1)]]
+    let (verts', geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
+                foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (verts, B.empty) .
+                groupOn fst $ concat [ blockGeometry blockLookup (cX * chunkW + x, y, cZ * chunkW + z)
+                                     | x <- [0..chunkW - 1], y <- [0..chunkH - 1], z <- [0..chunkW - 1]]
+    putStrLn $ printf "Processing chunk (%d, %d). Debug: %d %d" cX cZ (M.size verts) (B.length geoms)
+    return (verts', (BC.pack $ printf "g chunk.%d.%d" cX cZ) `B.append` geom `B.append` geoms)
 
 groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
 
-addFace :: (M.Map Location Int, [String]) -> Face -> (M.Map Location Int, [String])
+addFace :: (M.Map Location Int, B.ByteString) -> Face -> (M.Map Location Int, B.ByteString)
 addFace (!vs, !gs) f = (second
-    ((: gs) . ("f " ++) . unwords . zipWith (\(_,ti,ni) vi -> printf "%d/%d/%d" vi ti ni) f)) .
+    (flip B.append gs . BC.pack . printf "f %s\n" . unwords . zipWith (\(_,ti,ni) vi -> printf "%d/%d/%d" vi ti ni) f)) .
     insertVertices vs $ map (\(v,_,_) -> v) f
 
 insertVertices :: M.Map Location Int -> [Location] -> (M.Map Location Int, [Int])
 insertVertices = foldr (\v (m, is) -> maybe (M.insert v (M.size m + 1) m, (M.size m + 1) : is)
     (\i -> (m, i:is)) $ M.lookup v m) . flip (,) []
 
-blockGeometry :: M.Map Coord Chunk -> Location -> [(String, Face)]
-blockGeometry world (x,y,z) = maybe [] (\blockID -> case blockID of
+blockGeometry :: M.Map Location (Word8, Word8) -> Location -> [(String, Face)]
+blockGeometry blockLookup (x,y,z) = maybe [] (\blockID -> case blockID of
     (0,_) -> []
     (t,_) -> map (\(o,_) -> (material t o, blockFace (x,y,z) o)) $
              filter (maybe True (\(t',_) -> t /= t' && IS.notMember (fromIntegral t') solidIDs) .
-                 getBlock world . snd) [ (S, (x+1,y,z)), (N, (x-1,y,z)), (T, (x,y+1,z))
-                                       , (B, (x,y-1,z)), (W, (x,y,z+1)), (E, (x,y,z-1))]) $
-             getBlock world (x,y,z)
-
-getBlock :: M.Map Coord Chunk -> Location -> Maybe (Word8, Word8)
-getBlock world (x,y,z) = if y < 0 || y >= chunkH then Nothing else
-    fmap ((flip B.index $ fromIntegral blockOffset) *** (flip B.index $ fromIntegral dataOffset)) $ M.lookup (div x chunkW, div z chunkW) world where
-    blockOffset = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
-    dataOffset  = div (y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH) 2
+                 flip M.lookup blockLookup . snd) [ (S, (x+1,y,z)), (N, (x-1,y,z)), (T, (x,y+1,z))
+                                                  , (B, (x,y-1,z)), (W, (x,y,z+1)), (E, (x,y,z-1))]) $
+             M.lookup (x,y,z) blockLookup
 
 solidIDs :: IS.IntSet
 solidIDs = IS.fromAscList $ [1..5] ++ [7] ++ [11..17] ++ [19] ++ [21..25] ++
