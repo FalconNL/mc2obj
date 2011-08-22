@@ -13,6 +13,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Word
 import System.FilePath
+import System.IO
 import Text.Printf
 import Region
 
@@ -29,10 +30,11 @@ chunkW, chunkH :: Int
 export :: FilePath -> FilePath -> [Coord] -> IO ()
 export regionDir file chunks = do
     !world <- loadWorld regionDir chunks
-    !geom <- fmap B.concat $ mapM (chunkGeom world) chunks
-    putStrLn "Writing .obj file..."
-    B.writeFile file $ "mtllib minecraft.mtl\n\n" `B.append` geom
-    putStrLn "Done." where
+    h <- openFile file WriteMode
+    B.hPutStrLn h "mtllib minecraft.mtl\n\n"
+    mapM_ (\c -> B.hPutStrLn h =<< chunkGeom world c) chunks
+    hClose h
+    putStrLn "Done."
 
 loadWorld :: FilePath -> [Coord] -> IO (M.Map Coord Chunk)
 loadWorld regionDir = fmap (M.fromList . concat) .

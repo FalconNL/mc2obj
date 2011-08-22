@@ -1,2 +1,10 @@
+remove bottom vertices
+
+add y-limit to get rid of cave systems
+
+compare performance of chunks vs. single geometry
+
+test criterion
+
 parallelize program by making chunkGeom world -> Coord -> ByteString, parMapping chunkGeom over chunks (using dph-base or repa)
     and B.concatting at the end
