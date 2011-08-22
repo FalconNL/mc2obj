@@ -1,3 +1,2 @@
-make vertices chunk-specific to save on output size (chunkGeom becomes world -> ByteString -> Coord -> ByteString)
 parallelize program by making chunkGeom world -> Coord -> ByteString, parMapping chunkGeom over chunks (using dph-base or repa)
     and B.concatting at the end

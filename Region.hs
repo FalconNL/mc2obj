@@ -12,8 +12,8 @@ import qualified Data.IntMap as I
 import Data.List
 import Data.Word
 
-data Region = Region !(I.IntMap NBT) deriving Show
-data NBT = NBT !Tag deriving Show
+newtype Region = Region (I.IntMap NBT) deriving Show
+newtype NBT = NBT Tag deriving Show
 data Tag = TAG_End | TAG_Byte !Word8 | TAG_Short !Word16 | TAG_Int !Word32
          | TAG_Long !Word64 | TAG_Float !Float | TAG_Double !Double
          | TAG_Byte_Array !B.ByteString | TAG_String !B.ByteString
