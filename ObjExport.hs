@@ -48,22 +48,36 @@ loadWorld regionDir = fmap (M.fromList . concat) .
                                       chunkData chunk)) $ I.assocs region) .
     S.toList . S.fromList . map (\(cX, cZ) -> (div cX 32, div cZ 32))
 
-chunkData :: NBT -> (B.ByteString, B.ByteString)
+chunkData :: NBT -> Chunk
 chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
-                 getArray $ navigate ["Level", "Data"] nbt)
+                 B.concatMap (\i -> B.pack [div i 16, mod i 16]) . getArray $ navigate ["Level", "Data"] nbt)
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
 chunkGeom :: M.Map Coord Chunk -> (M.Map Location Int, B.ByteString) -> Coord ->
              IO (M.Map Location Int, B.ByteString)
 chunkGeom world (verts, geoms) (cX, cZ) = do
-    let blockLookup = foldl1' M.union [ M.fromList . zip [(cX * chunkW + x,y,cZ * chunkW + z) | x <- [0..chunkW-1], z <- [0..chunkW-1], y <- [0..chunkH-1] ] . B.zip blockIDs $ B.concatMap (\i -> B.pack [div i 16, mod i 16]) dataVals
-                      | Just (blockIDs, dataVals) <- map (`M.lookup` world) [(cX, cZ), (cX-1, cZ), (cX+1, cZ), (cX, cZ-1), (cX, cZ+1)]]
     let (verts', geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
                 foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (verts, B.empty) .
-                groupOn fst $ concat [ blockGeometry blockLookup (cX * chunkW + x, y, cZ * chunkW + z)
+                groupOn fst $ concat [ blockGeometry (blockLookup world cX cZ) (cX * chunkW + x, y, cZ * chunkW + z)
                                      | x <- [0..chunkW - 1], y <- [0..chunkH - 1], z <- [0..chunkW - 1]]
     putStrLn $ printf "Processing chunk (%d, %d). Debug: %d %d" cX cZ (M.size verts) (B.length geoms)
     return (verts', (BC.pack $ printf "g chunk.%d.%d" cX cZ) `B.append` geom `B.append` geoms)
+
+blockLookup :: M.Map Coord Chunk -> Int -> Int -> Location -> Maybe (Word8, Word8)
+blockLookup world cX cZ (x,y,z) = if y < 0 || y >= chunkH then Nothing else
+    fmap (flip B.index i *** flip B.index i) $
+         case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
+              (LT,_) -> south
+              (GT,_) -> north
+              (_,LT) -> west
+              (_,GT) -> east
+              _      -> current
+    where i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
+          current = M.lookup (cX,cZ)   world
+          east    = M.lookup (cX,cZ-1) world
+          west    = M.lookup (cX,cZ+1) world
+          north   = M.lookup (cX-1,cZ) world
+          south   = M.lookup (cX+1,cZ) world
 
 groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
@@ -77,14 +91,14 @@ insertVertices :: M.Map Location Int -> [Location] -> (M.Map Location Int, [Int]
 insertVertices = foldr (\v (m, is) -> maybe (M.insert v (M.size m + 1) m, (M.size m + 1) : is)
     (\i -> (m, i:is)) $ M.lookup v m) . flip (,) []
 
-blockGeometry :: M.Map Location (Word8, Word8) -> Location -> [(String, Face)]
-blockGeometry blockLookup (x,y,z) = maybe [] (\blockID -> case blockID of
+blockGeometry :: (Location -> Maybe (Word8, Word8)) -> Location -> [(String, Face)]
+blockGeometry bl (x,y,z) = maybe [] (\blockID -> case blockID of
     (0,_) -> []
     (t,_) -> map (\(o,_) -> (material t o, blockFace (x,y,z) o)) $
              filter (maybe True (\(t',_) -> t /= t' && IS.notMember (fromIntegral t') solidIDs) .
-                 flip M.lookup blockLookup . snd) [ (S, (x+1,y,z)), (N, (x-1,y,z)), (T, (x,y+1,z))
+                 bl . snd) [ (S, (x+1,y,z)), (N, (x-1,y,z)), (T, (x,y+1,z))
                                                   , (B, (x,y-1,z)), (W, (x,y,z+1)), (E, (x,y,z-1))]) $
-             M.lookup (x,y,z) blockLookup
+             bl (x,y,z)
 
 solidIDs :: IS.IntSet
 solidIDs = IS.fromAscList $ [1..5] ++ [7] ++ [11..17] ++ [19] ++ [21..25] ++
