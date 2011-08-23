@@ -1,4 +1,4 @@
-mc2obj v0.1
+mc2obj v0.2
 ===========
 
 mc2obj is a tool to convert part of a Minecraft world to a .obj file, which
@@ -14,8 +14,7 @@ differences:
 mc2obj is still in the early stages of development, so it is not yet usable
 unless you know Haskell. Currently supported:
 
-* Loading a region file
-* Converting a single chunk to .obj format
+* Converting a group of chunks to .obj format with reasonable speed
 * Materials for naturally occurring blocks
 * Geometry for naturally occurring full blocks
 
