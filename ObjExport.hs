@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, BangPatterns #-}
 
 module ObjExport (defaultOptions, export, exportWith,
-    bottom, yFrom, yTo) where
+    bottom, sides, yFrom, yTo) where
 
 import Control.Arrow
 import qualified Data.ByteString as B
@@ -19,12 +19,13 @@ import Text.Printf
 import Region
 
 data Orientation = E | W | N | S | T | B deriving (Enum, Eq, Show)
-data ExportOptions = ExportOptions { bottom :: Bool, yFrom :: Int, yTo :: Int }
+data ExportOptions = ExportOptions { bottom :: Bool, sides :: Bool, yFrom :: Int, yTo :: Int }
 
 type Location = (Int, Int, Int)
 type Face = [(Location, Int, Int)]
 type Coord = (Int, Int)
 type Chunk = (B.ByteString, B.ByteString)
+type BorderedChunk = (Maybe Chunk, Maybe Chunk, Maybe Chunk, Maybe Chunk, Maybe Chunk)
 
 chunkW, chunkH :: Int
 (chunkW, chunkH) = (16, 128)
@@ -34,30 +35,43 @@ export = exportWith defaultOptions
 
 exportWith :: ExportOptions -> FilePath -> FilePath -> [Coord] -> IO ()
 exportWith options regionDir file chunks = do
-    world <- loadWorld regionDir chunks
     h <- openFile file WriteMode
     B.hPutStrLn h "mtllib minecraft.mtl\n\n"
-    mapM_ (\c -> B.hPutStrLn h =<< chunkGeom options world c) chunks
+    world <- loadWorld regionDir chunks
+    mapM_ (\(i,c) -> B.hPutStrLn h =<< chunkGeom options c i) world
     hClose h
     putStrLn "Done."
 
 defaultOptions :: ExportOptions
-defaultOptions = ExportOptions False 0 127
+defaultOptions = ExportOptions False False 0 127
 
-loadWorld :: FilePath -> [Coord] -> IO (M.Map Coord Chunk)
-loadWorld regionDir = fmap (foldl' M.union M.empty) .
-    mapM (\(rX, rZ) -> fmap (I.foldWithKey (\i c -> M.insert (32 * rX + mod i 32, 32 * rZ + div i 32) (chunkData c)) M.empty) .
-        loadRegion $ regionDir </> printf "r.%d.%d.mcr" rX rZ) .
-    S.toList . S.fromList . map (\(cX, cZ) -> (div cX 32, div cZ 32))
+loadWorld :: FilePath -> [Coord] -> IO [(Coord, BorderedChunk)]
+loadWorld regionDir cs = do
+    let regionID (cX,cZ) = (div cX 32, div cZ 32)
+    let neededChunks = S.fromList cs
+    regions <- mapM (\(rX,rZ) -> fmap (((,) (rX,rZ)) . I.map chunkData) $
+                                 loadRegion (regionDir </> printf "r.%d.%d.mcr" rX rZ)) .
+               S.toList $ S.map regionID neededChunks
+    let bordered = M.fromList $ map (\c -> (c, (Nothing, Nothing, Nothing, Nothing, Nothing))) cs
+
+    return $ M.assocs $ foldl' (\m ((rX,rZ), r) ->
+          S.fold (\(cX,cZ) a -> let chunk = I.lookup (mod cX 32 + 32 * mod cZ 32) r in
+                M.adjust (\(_,n,e,s,w) -> (chunk,n,e,s,w)) (cX,cZ) $
+                M.adjust (\(c,_,e,s,w) -> (c,chunk,e,s,w)) (cX+1,cZ) $
+                M.adjust (\(c,n,_,s,w) -> (c,n,chunk,s,w)) (cX,cZ+1) $
+                M.adjust (\(c,n,e,_,w) -> (c,n,e,chunk,w)) (cX-1,cZ) $
+                M.adjust (\(c,n,e,s,_) -> (c,n,e,s,chunk)) (cX,cZ-1) $
+                a
+            ) m $ S.filter ((== (rX,rZ)) . regionID) neededChunks
+        ) bordered regions
 
 chunkData :: Tag -> Chunk
 chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
-                 --B.concatMap (\i -> B.pack [div i 16, mod i 16]) . getArray $ navigate ["Level", "Data"] nbt)
                  getArray $ navigate ["Level", "Data"] nbt)
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
-chunkGeom :: ExportOptions -> M.Map Coord Chunk -> Coord -> IO B.ByteString
-chunkGeom options world (cX, cZ) = do
+chunkGeom :: ExportOptions -> BorderedChunk -> (Int, Int) -> IO BC.ByteString
+chunkGeom options (c,n,e,s,w) (cX,cZ) = do
     let (verts, geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
                 foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (M.empty, B.empty) .
                 groupOn fst $ concat [ blockGeometry options blockLookup (cX * chunkW + x, y, cZ * chunkW + z)
@@ -71,23 +85,17 @@ chunkGeom options world (cX, cZ) = do
         texcoords = "\nvt 0 0\nvt 1 0\nvt 1 1\nvt 0 1\n"
         normals   = "\nvn 1 0 0\nvn -1 0 0\nvn 0 1 0\nvn 0 -1 0\nvn 0 0 1\nvn 0 0 -1\n\n"
         
-        current = M.lookup (cX,cZ)   world
-        east    = M.lookup (cX,cZ-1) world
-        west    = M.lookup (cX,cZ+1) world
-        north   = M.lookup (cX-1,cZ) world
-        south   = M.lookup (cX+1,cZ) world
-
-        blockLookup :: Location -> Maybe (Word8, Word8)
-        blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (Just $ if bottom options then (0,0) else (1,0)) else
+        blockLookup :: Location -> (Word8, Word8)
+        blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if bottom options then (0,0) else (1,0)) else
             let i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
-            --in  fmap (flip B.index i *** flip B.index i) $
-            in  fmap (flip B.index i *** ((if even i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
+            in  maybe (if sides options then (0,0) else (1,0))
+                      (flip B.index i *** ((if even i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
                     case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
-                         (LT,_) -> south
-                         (GT,_) -> north
-                         (_,LT) -> west
-                         (_,GT) -> east
-                         _      -> current
+                         (LT,_) -> s
+                         (GT,_) -> n
+                         (_,LT) -> w
+                         (_,GT) -> e
+                         _      -> c
 
 groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
@@ -99,14 +107,14 @@ addFace (!vs, !gs) f = (second
     foldr (\(v,_,_) (m, is) -> maybe (M.insert v (M.size m + 1) m, (M.size m + 1) : is)
         (\i -> (m, i:is)) $ M.lookup v m) (vs, []) f
 
-blockGeometry :: ExportOptions -> (Location -> Maybe (Word8, Word8)) -> Location -> [(String, Face)]
-blockGeometry options blockRef (x,y,z) = maybe [] (\blockID -> case blockID of
+blockGeometry :: ExportOptions -> (Location -> (Word8, Word8)) -> Location -> [(String, Face)]
+blockGeometry options blockRef (x,y,z) = case blockRef (x,y,z) of
     (0,_) -> []
     (t,_) -> map (\(o,_) -> (material t o, blockFace (x,y,z) o)) $
-             filter (maybe True (\(t',_) -> t /= t' && IS.notMember (fromIntegral t') solidIDs) . blockRef . snd) $
+             filter ((\(t',_) -> t /= t' && IS.notMember (fromIntegral t') solidIDs) . blockRef . snd) $
              filter (\(s,_) -> y /= 0 || s /= B || bottom options)
                  [ (S, (x+1,y,z)), (N, (x-1,y,z)), (T, (x,y+1,z))
-                 , (B, (x,y-1,z)), (W, (x,y,z+1)), (E, (x,y,z-1))]) $ blockRef (x,y,z)
+                 , (B, (x,y-1,z)), (W, (x,y,z+1)), (E, (x,y,z-1))]
 
 solidIDs :: IS.IntSet
 solidIDs = IS.fromAscList $ [1..5] ++ [7] ++ [11..17] ++ [19] ++ [21..25] ++

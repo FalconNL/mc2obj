@@ -14,10 +14,14 @@ differences:
 mc2obj is still in the early stages of development, so it is not yet usable
 unless you know Haskell. Currently supported:
 
-* Converting a group of chunks to .obj format with reasonable speed
+* Converting a group of chunks to .obj format
 * Materials for naturally occurring blocks
 * Geometry for naturally occurring full blocks
+* A few options (min and max y height, show/hide sides and bottoms of chunks)
 
-Below is a teaser shot of a single chunk:
+Below are two work in progress shots showing a section of terrain of 32x32
+chunks. All the pink blocks are ones I have yet to implement the material for.
 
-![mc2obj teaser](http://3.bp.blogspot.com/-v7Px1nLat_U/TlBXUT5zg6I/AAAAAAAAASE/8u9xC4uFZwI/s640/hmcobj1.jpg "mc2obj teaser")
+![mc2obj teaser 3](http://3.bp.blogspot.com/-W-140s7T_qk/TlQ1mxWPHLI/AAAAAAAAASM/GTOqD58Kqqk/s640/hmcobj3.jpg "mc2obj teaser3")
+
+![mc2obj teaser 2](http://4.bp.blogspot.com/-r-YzJHGxzNY/TlQ1fo_M9LI/AAAAAAAAASI/5hxsklnCm8Y/s640/hmcobj2.jpg "mc2obj teaser2")

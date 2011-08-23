@@ -1,5 +1,10 @@
-find way of reducing memory use by running one region (or even chunk) at a time
-    idea: foldM write $ map (\chunk -> (chunk, n, e, s, w)) chunks
+textures for crafted materials
+
+non-block geometry
+
+command line args
+
+options: xRange, zRange, rect/circle
 
 parallelize program by making chunkGeom world -> Coord -> ByteString, parMapping chunkGeom over chunks (using dph-base or repa)
     and B.concatting at the end
