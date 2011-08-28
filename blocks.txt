@@ -31,7 +31,7 @@
  ,(21, \_ ns -> block ns "Ore_Lapis")
  ,(22, \_ ns -> block ns "Lapis")
  ,(23, \d ns -> top ns "Furnace_Top" ++ bottom ns "Furnace_Top" ++
-                ((\(i,o) -> o $ if d == 0 then "Dispenser_Front" else "Furnace_Side") =<<
+                ((\(i,o) -> o $ if d == i then "Dispenser_Front" else "Furnace_Side") =<<
                     [(2, east ns), (3, west ns), (4, north ns), (5, south ns)]))
  ,(24, \_ ns -> top ns "Sandstone_Top" ++ bottom ns "Sandstone_Bottom" ++ sides ns "Sandstone_Side")
  ,(25, \_ ns -> block ns "Jukebox_Side")
@@ -92,10 +92,10 @@
  ,(59, \_ ns -> block ns "Unknown")
  ,(60, \d ns -> top ns (if d == 0 then "Farmland_Dry" else "Farmland_Wet") ++ bottom ns "Dirt" ++ sides ns "Dirt")
  ,(61, \d ns -> top ns "Furnace_Top" ++ bottom ns "Furnace_Top" ++
-                ((\(i,o) -> o $ if d == 0 then "Furnace_Front" else "Furnace_Side") =<<
+                ((\(i,o) -> o $ if d == i then "Furnace_Front" else "Furnace_Side") =<<
                     [(2, east ns), (3, west ns), (4, north ns), (5, south ns)]))
  ,(62, \d ns -> top ns "Furnace_Top" ++ bottom ns "Furnace_Top" ++
-                ((\(i,o) -> o $ if d == 0 then "Furnace_Lit" else "Furnace_Side") =<<
+                ((\(i,o) -> o $ if d == i then "Furnace_Lit" else "Furnace_Side") =<<
                     [(2, east ns), (3, west ns), (4, north ns), (5, south ns)]))
  ,(63, \_ ns -> block ns "Unknown")
  ,(64, \_ ns -> block ns "Unknown")
@@ -121,15 +121,15 @@
  ,(84, \_ ns -> top ns "Jukebox_Top" ++ bottom ns "Jukebox_Side" ++ sides ns "Jukebox_Side")
  ,(85, \_ ns -> block ns "Unknown")
  ,(86, \d ns -> top ns "Pumpkin_Top" ++ bottom ns "Pumpkin_Top" ++
-                ((\(i,o) -> o $ if d == 0 then "Pumpkin_Front" else "Pumpkin_Side") =<<
-                    [(0, east ns), (1, south ns), (2, west ns), (3, north ns)]))
+                ((\(i,o) -> o $ if d == i then "Pumpkin_Front" else "Pumpkin_Side") =<<
+                    [(0, west ns), (1, north ns), (2, east ns), (3, south ns)]))
  ,(87, \_ ns -> block ns "Netherrack")
  ,(88, \_ ns -> block ns "Soul_Sand")
  ,(89, \_ ns -> block ns "Glowstone")
  ,(90, \_ ns -> block ns "Unknown")
  ,(91, \d ns -> top ns "Pumpkin_Top" ++ bottom ns "Pumpkin_Top" ++
-                ((\(i,o) -> o $ if d == 0 then "Pumpkin_Lit" else "Pumpkin_Side") =<<
-                    [(0, east ns), (1, south ns), (2, west ns), (3, north ns)]))
+                ((\(i,o) -> o $ if d == i then "Pumpkin_Lit" else "Pumpkin_Side") =<<
+                    [(0, west ns), (1, north ns), (2, east ns), (3, south ns)]))
  ,(92, \_ ns -> block ns "Unknown")
  ,(93, \_ ns -> block ns "Unknown")
  ,(94, \_ ns -> block ns "Unknown")

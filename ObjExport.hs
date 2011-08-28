@@ -75,7 +75,8 @@ chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> IO BC.
 chunkGeom options (texcoords, normals, blockDefs) (c,n,e,s,w) (cX,cZ) = do
     let (verts, geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
                 foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (M.empty, B.empty) .
-                groupOn fst $ concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) -> ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $ f (snd $ blockLookup (x,y,z))
+                groupOn fst $ concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) -> ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
+                                         f (snd $ blockLookup (x,y,z))
                                          ((fst $ blockLookup (x,y,z)), (fst $ blockLookup (x-1,y,z)), (fst $ blockLookup (x,y,z-1)),
                                           (fst $ blockLookup (x+1,y,z)), (fst $ blockLookup (x,y,z+1)), (fst $ blockLookup (x,y+1,z)), (fst $ blockLookup (x,y-1,z))))
                                          (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
@@ -95,7 +96,7 @@ chunkGeom options (texcoords, normals, blockDefs) (c,n,e,s,w) (cX,cZ) = do
             let i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
             in  maybe (if sides options then (0,0) else (1,0))
                       ((fromIntegral . flip B.index i) ***
-                       (fromIntegral . (if even i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
+                       (fromIntegral . (if odd i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
                     case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
                          (LT,_) -> s
                          (GT,_) -> n
