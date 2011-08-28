@@ -1,6 +1,10 @@
+--import System.Console.CmdArgs.Implicit
 import ObjExport
 
 main :: IO ()
-main = exportWith (defaultOptions { yFrom = 60, yTo = 127 })
-                  "e:/mc2obj/regions" "e:/mc2obj/test.obj"
-                  [(x,z) | x <- [-16..15], z <- [-16..15]]
+main = do putStrLn "Compiling block data..."
+          blockDefs <- loadBlockDefs "blocks.txt"
+          exportWith (defaultOptions { yFrom = 60, yTo = 127 })
+                     blockDefs
+                     "mc2obj test/region" "e:/mc2obj/test.obj"
+                     [(x,z) | x <- [0..1], z <- [0..1]]

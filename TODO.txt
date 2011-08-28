@@ -1,6 +1,4 @@
-textures for crafted materials
-
-non-block geometry
+remaining blocks
 
 command line args
 
