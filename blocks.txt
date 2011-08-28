@@ -1,0 +1,139 @@
+([(0,0), (1,0), (1,1), (0,1) --block
+ ,(1,0.5),(0,0.5) --slab
+ ]
+,[(1,0,0), (-1,0,0), (0,1,0), (0,-1,0), (0,0,1), (0,0,-1) --block
+ ]
+,[( 0, \_ _  -> [])
+ ,( 1, \_ ns -> block ns "Stone")
+ ,( 2, \_ ns@(_,_,_,_,_,t,_) -> case t of 78 -> top ns "Snow" ++ bottom ns "Dirt" ++ sides ns "Dirt_Snow"
+                                          _  -> top ns "Grass_Top" ++ bottom ns "Dirt" ++ sides ns "Dirt_Grass")
+ ,( 3, \_ ns -> block ns "Dirt")
+ ,( 4, \_ ns -> block ns "Cobblestone")
+ ,( 5, \_ ns -> block ns "Wood")
+ ,( 6, \_ ns -> block ns "Unknown")
+ ,( 7, \_ ns -> block ns "Bedrock")
+ ,( 8, \_ ns -> block ns "Water")
+ ,( 9, \_ ns -> block ns "Unknown")
+ ,(10, \_ ns -> block ns "Lava")
+ ,(11, \_ ns -> block ns "Unknown")
+ ,(12, \_ ns -> block ns "Sand")
+ ,(13, \_ ns -> block ns "Gravel")
+ ,(14, \_ ns -> block ns "Ore_Gold")
+ ,(15, \_ ns -> block ns "Ore_Iron")
+ ,(16, \_ ns -> block ns "Ore_Coal")
+ ,(17, \d ns -> top ns "Log_Top" ++ bottom ns "Log_Top" ++ sides ns (case d of 1 -> "Log_Pine"
+                                                                               2 -> "Log_Birch"
+                                                                               _ -> "Log_Oak"))
+ ,(18, \d ns -> block ns (case mod d 4 of 1 -> "Leaves_Pine"
+                                          _ -> "Leaves_Oak"))
+ ,(19, \_ ns -> block ns "Sponge")
+ ,(20, \_ ns -> block ns "Glass")
+ ,(21, \_ ns -> block ns "Ore_Lapis")
+ ,(22, \_ ns -> block ns "Lapis")
+ ,(23, \d ns -> top ns "Furnace_Top" ++ bottom ns "Furnace_Top" ++
+                ((\(i,o) -> o $ if d == 0 then "Dispenser_Front" else "Furnace_Side") =<<
+                    [(2, east ns), (3, west ns), (4, north ns), (5, south ns)]))
+ ,(24, \_ ns -> top ns "Sandstone_Top" ++ bottom ns "Sandstone_Bottom" ++ sides ns "Sandstone_Side")
+ ,(25, \_ ns -> block ns "Jukebox_Side")
+ ,(26, \_ ns -> block ns "Unknown")
+ ,(27, \d _  -> flat $ if div d 8 == 1 then "Rails_Powered_On" else "Rails_Powered_Off")
+ ,(28, \_ _  -> flat "Rails_Detector")
+ ,(29, \_ ns -> block ns "Unknown")
+ ,(30, \_ ns -> block ns "Unknown")
+ ,(31, \_ ns -> block ns "Unknown")
+ ,(32, \_ ns -> block ns "Unknown")
+ ,(33, \_ ns -> block ns "Unknown")
+ ,(34, \_ ns -> block ns "Unknown")
+ ,(35, \d ns -> block ns $ "Wool_" ++ (case d of 0  -> "White"
+                                                 1  -> "Orange"
+                                                 2  -> "Magenta"
+                                                 3  -> "Light_Blue"
+                                                 4  -> "Yellow"
+                                                 5  -> "Lime"
+                                                 6  -> "Pink"
+                                                 7  -> "Gray"
+                                                 8  -> "Light_Gray"
+                                                 9  -> "Cyan"
+                                                 10 -> "Purple"
+                                                 11 -> "Blue"
+                                                 12 -> "Brown"
+                                                 13 -> "Green"
+                                                 14 -> "Red"
+                                                 15 -> "Black"))
+ ,(36, \_ _  -> [])
+ ,(37, \_ ns -> block ns "Unknown")
+ ,(38, \_ ns -> block ns "Unknown")
+ ,(39, \_ ns -> block ns "Unknown")
+ ,(40, \_ ns -> block ns "Unknown")
+ ,(41, \_ ns -> block ns "Gold")
+ ,(42, \_ ns -> block ns "Iron")
+ ,(43, \d ns -> case d of 0 -> top ns "Slab_Top"      ++ bottom ns "Slab_Top"         ++ sides ns "Slab_Side"
+                          1 -> top ns "Sandstone_Top" ++ bottom ns "Sandstone_Bottom" ++ sides ns "Sandstone_Side"
+                          2 -> block ns "Wood"
+                          3 -> block ns "Cobblestone")
+ ,(44, \d ns -> slab_top      (case d of 0 -> "Slab_Top";  1 -> "Sandstone_Top";    2 -> "Wood"; 3 -> "Cobblestone") ++
+                bottom ns     (case d of 0 -> "Slab_Top";  1 -> "Sandstone_Bottom"; 2 -> "Wood"; 3 -> "Cobblestone") ++
+                slab_sides ns (case d of 0 -> "Slab_Side"; 1 -> "Sandstone_Side";   2 -> "Wood"; 3 -> "Cobblestone"))
+ ,(45, \_ ns -> block ns "Moss_Stone")
+ ,(46, \_ ns -> top ns "TNT_Top" ++ bottom ns "TNT_Bottom" ++ sides ns "TNT_Side")
+ ,(47, \_ ns -> top ns "Wood" ++ bottom ns "Wood" ++ sides ns "Bookshelf")
+ ,(48, \_ ns -> block ns "Moss_Stone")
+ ,(49, \_ ns -> block ns "Obsidian")
+ ,(50, \_ ns -> block ns "Unknown")
+ ,(51, \_ ns -> sides ns "Fire")
+ ,(52, \_ ns -> block ns "Spawner")
+ ,(53, \_ ns -> block ns "Unknown")
+ ,(54, \_ ns -> block ns "Unknown")
+ ,(55, \_ ns -> block ns "Unknown")
+ ,(56, \_ ns -> block ns "Ore_Diamond")
+ ,(57, \_ ns -> block ns "Diamond")
+ ,(58, \_ ns -> top ns "Workbench_Top" ++ bottom ns "Wood" ++ north ns "Workbench_Front" ++
+                south ns "Workbench_Front" ++ east ns "Workbench_Side" ++ west ns "Workbench_Side")
+ ,(59, \_ ns -> block ns "Unknown")
+ ,(60, \d ns -> top ns (if d == 0 then "Farmland_Dry" else "Farmland_Wet") ++ bottom ns "Dirt" ++ sides ns "Dirt")
+ ,(61, \d ns -> top ns "Furnace_Top" ++ bottom ns "Furnace_Top" ++
+                ((\(i,o) -> o $ if d == 0 then "Furnace_Front" else "Furnace_Side") =<<
+                    [(2, east ns), (3, west ns), (4, north ns), (5, south ns)]))
+ ,(62, \d ns -> top ns "Furnace_Top" ++ bottom ns "Furnace_Top" ++
+                ((\(i,o) -> o $ if d == 0 then "Furnace_Lit" else "Furnace_Side") =<<
+                    [(2, east ns), (3, west ns), (4, north ns), (5, south ns)]))
+ ,(63, \_ ns -> block ns "Unknown")
+ ,(64, \_ ns -> block ns "Unknown")
+ ,(65, \_ ns -> block ns "Unknown")
+ ,(66, \_ ns -> block ns "Unknown")
+ ,(67, \_ ns -> block ns "Unknown")
+ ,(68, \_ ns -> block ns "Unknown")
+ ,(69, \_ ns -> block ns "Unknown")
+ ,(70, \_ ns -> block ns "Unknown")
+ ,(71, \_ ns -> block ns "Unknown")
+ ,(72, \_ ns -> block ns "Unknown")
+ ,(73, \_ ns -> block ns "Ore_Redstone")
+ ,(74, \_ ns -> block ns "Ore_Redstone")
+ ,(75, \_ ns -> block ns "Unknown")
+ ,(76, \_ ns -> block ns "Unknown")
+ ,(77, \_ ns -> block ns "Unknown")
+ ,(78, \_ ns -> block ns "Unknown")
+ ,(79, \_ ns -> block ns "Ice")
+ ,(80, \_ ns -> block ns "Snow")
+ ,(81, \_ ns -> block ns "Unknown")
+ ,(82, \_ ns -> block ns "Clay")
+ ,(83, \_ ns -> block ns "Unknown")
+ ,(84, \_ ns -> top ns "Jukebox_Top" ++ bottom ns "Jukebox_Side" ++ sides ns "Jukebox_Side")
+ ,(85, \_ ns -> block ns "Unknown")
+ ,(86, \d ns -> top ns "Pumpkin_Top" ++ bottom ns "Pumpkin_Top" ++
+                ((\(i,o) -> o $ if d == 0 then "Pumpkin_Front" else "Pumpkin_Side") =<<
+                    [(0, east ns), (1, south ns), (2, west ns), (3, north ns)]))
+ ,(87, \_ ns -> block ns "Netherrack")
+ ,(88, \_ ns -> block ns "Soul_Sand")
+ ,(89, \_ ns -> block ns "Glowstone")
+ ,(90, \_ ns -> block ns "Unknown")
+ ,(91, \d ns -> top ns "Pumpkin_Top" ++ bottom ns "Pumpkin_Top" ++
+                ((\(i,o) -> o $ if d == 0 then "Pumpkin_Lit" else "Pumpkin_Side") =<<
+                    [(0, east ns), (1, south ns), (2, west ns), (3, north ns)]))
+ ,(92, \_ ns -> block ns "Unknown")
+ ,(93, \_ ns -> block ns "Unknown")
+ ,(94, \_ ns -> block ns "Unknown")
+ ,(95, \_ ns -> block ns "Unknown")
+ ,(96, \_ ns -> block ns "Unknown")
+ ]
+)
