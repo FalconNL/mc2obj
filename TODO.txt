@@ -1,4 +1,4 @@
-remaining blocks
+fix plants, slanted torches, remaining blocks
 
 command line args
 
