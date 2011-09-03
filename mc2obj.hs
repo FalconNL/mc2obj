@@ -3,7 +3,7 @@ import ObjExport
 
 main :: IO ()
 main = do putStrLn "Compiling block data..."
-          blockDefs <- loadBlockDefs "blocks.txt"
+          blockDefs <- loadBlockDefs "blocks.hs"
           exportWith (defaultOptions { yFrom = 60, yTo = 127 })
                      blockDefs
                      "mc2obj test/region" "e:/mc2obj/test.obj"

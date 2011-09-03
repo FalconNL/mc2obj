@@ -23,9 +23,9 @@ getNBT = byte >> string >> tag 10
 getRegion :: Get (I.IntMap Tag)
 getRegion = do cLengths <- (\y -> zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
                                           (tail y ++ [(\((o,l),i) -> ((o+l,l),i)) $ last y]) y) .
-                           sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (flip divMod 256) <$> 
+                           sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (`divMod` 256) <$> 
                            replicateM 1024 int <* replicateM 1024 int
-               I.fromList <$> mapM (\(i, y) -> ((,) i) . run getNBT <$> chunk y) cLengths
+               I.fromList <$> mapM (\(i, y) -> (,) i . run getNBT <$> chunk y) cLengths
 
 tag :: Word8 -> Get Tag
 tag  0 = return TAG_End
@@ -44,7 +44,7 @@ tag  n = error $ "Unrecognized tag type: " ++ show n
 byte = getWord8
 short = getWord16be
 int = getWord32be
-string = (getByteString . fromIntegral =<< short)
+string = getByteString . fromIntegral =<< short
 compound = byte >>= \tagType -> if tagType == 0 then return [] else 
     (:) <$> ((,) <$> string <*> tag tagType) <*> compound
 

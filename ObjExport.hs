@@ -50,7 +50,7 @@ loadWorld :: FilePath -> [Coord] -> IO [(Coord, BorderedChunk)]
 loadWorld regionDir cs = do
     let regionID (cX,cZ) = (div cX 32, div cZ 32)
     let neededChunks = S.fromList cs
-    regions <- mapM (\(rX,rZ) -> fmap (((,) (rX,rZ)) . I.map chunkData) $
+    regions <- mapM (\(rX,rZ) -> fmap ((,) (rX,rZ) . I.map chunkData) $
                                  loadRegion (regionDir </> printf "r.%d.%d.mcr" rX rZ)) .
                S.toList $ S.map regionID neededChunks
     let bordered = M.fromList $ map (\c -> (c, (Nothing, Nothing, Nothing, Nothing, Nothing))) cs
@@ -61,8 +61,7 @@ loadWorld regionDir cs = do
                   M.adjust (\(c,_,e,s,w) -> (c,chunk,e,s,w)) (cX+1,cZ) $
                   M.adjust (\(c,n,_,s,w) -> (c,n,chunk,s,w)) (cX,cZ+1) $
                   M.adjust (\(c,n,e,_,w) -> (c,n,e,chunk,w)) (cX-1,cZ) $
-                  M.adjust (\(c,n,e,s,_) -> (c,n,e,s,chunk)) (cX,cZ-1) $
-                  a
+                  M.adjust (\(c,n,e,s,_) -> (c,n,e,s,chunk)) (cX,cZ-1) a
             ) m $ S.filter ((== (rX,rZ)) . regionID) neededChunks
         ) bordered regions
 
@@ -77,8 +76,9 @@ chunkGeom options (texcoords, normals, blockDefs) (c,n,e,s,w) (cX,cZ) = do
                 foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (M.empty, B.empty) .
                 groupOn fst $ concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) -> ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
                                          f (snd $ blockLookup (x,y,z))
-                                         ((fst $ blockLookup (x,y,z)), (fst $ blockLookup (x-1,y,z)), (fst $ blockLookup (x,y,z-1)),
-                                          (fst $ blockLookup (x+1,y,z)), (fst $ blockLookup (x,y,z+1)), (fst $ blockLookup (x,y+1,z)), (fst $ blockLookup (x,y-1,z))))
+                                         (fst $ blockLookup (x,y,z), fst $ blockLookup (x-1,y,z), fst $ blockLookup (x,y,z-1),
+                                          fst $ blockLookup (x+1,y,z), fst $ blockLookup (x,y,z+1), fst $ blockLookup (x,y+1,z),
+                                          fst $ blockLookup (x,y-1,z)))
                                          (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
                                      | x' <- [0..chunkW - 1]
                                      , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
@@ -88,7 +88,7 @@ chunkGeom options (texcoords, normals, blockDefs) (c,n,e,s,w) (cX,cZ) = do
             M.insert (-i) (BC.intercalate " " $ "v" : map (BC.pack . printf "%.3f") [x,y,z] ++ ["\n"]) vs) M.empty verts
     putStrLn $ printf "Processing chunk (%d, %d)" cX cZ
     return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ, vertices,
-        BC.pack $ (\(tx,ty) -> printf "vt %.3f %.3f\n" tx ty) =<< texcoords,
+        BC.pack $ uncurry (printf "vt %.3f %.3f\n") =<< texcoords,
         BC.pack $ (\(nx,ny,nz) -> printf "vn %.3f %.3f %.3f\n" nx ny nz) =<< normals, geom]
     where
         blockLookup :: Location -> (Int, Int)
@@ -108,9 +108,9 @@ groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
 
 addFace :: (M.Map Vertex Int, B.ByteString) -> Face -> (M.Map Vertex Int, B.ByteString)
-addFace (!vs, !gs) f = (second
+addFace (!vs, !gs) f = second
     (flip B.append gs . BC.intercalate " " . ("f" :) . (++ ["\n"]) .
-        zipWith (\(_,ti,ni) vi -> BC.intercalate "/" $ map (BC.pack . show) [-vi,ti,ni]) f)) $
+        zipWith (\(_,ti,ni) vi -> BC.intercalate "/" $ map (BC.pack . show) [-vi,ti,ni]) f) $
     foldr (\(v,_,_) (m, is) -> maybe (M.insert v (M.size m + 1) m, (M.size m + 1) : is)
         (\i -> (m, i:is)) $ M.lookup v m) (vs, []) f
 
@@ -123,5 +123,5 @@ blocks file = do
     loadModules ["blocks_util.hs"]
     setImportsQ [("Prelude", Nothing)]
     setTopLevelModules ["BlockUtil"]
-    fmap (\(ts,ns,bs) -> (ts,ns,I.fromList $ map (\(i,x) -> (fromIntegral i,x)) bs)) $
+    fmap (\(ts,ns,bs) -> (ts,ns,I.fromList $ map (first fromIntegral) bs)) $
         interpret file (as :: ([(Double, Double)], [Vertex], [(Int, Int -> (Int, Int, Int, Int, Int, Int, Int) -> [(String, Face)])]))
