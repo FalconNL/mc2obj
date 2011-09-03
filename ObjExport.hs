@@ -20,13 +20,15 @@ import Region
 data Orientation = E | W | N | S | T | B deriving (Enum, Eq, Show)
 data ExportOptions = ExportOptions { bottom :: Bool, sides :: Bool, yFrom :: Int, yTo :: Int }
 
-type Location = (Int, Int, Int)
+type TexCoord = (Double, Double)
 type Vertex = (Double, Double, Double)
-type Face = [(Vertex, Int, Int)]
+type Face = [(Vertex, TexCoord, Vertex)]
 type Coord = (Int, Int)
 type Chunk = (B.ByteString, B.ByteString)
 type BorderedChunk = (Maybe Chunk, Maybe Chunk, Maybe Chunk, Maybe Chunk, Maybe Chunk)
-type BlockDefs = ([(Double, Double)], [Vertex], I.IntMap (Int -> (Int, Int, Int, Int, Int, Int, Int) -> [(String, Face)]))
+type Neighbors = (Int, Int, Int, Int, Int, Int, Int)
+type BlockDefs = I.IntMap (Int -> Neighbors -> [(String, Face)])
+type Indexes = (M.Map Vertex Int, M.Map TexCoord Int, M.Map Vertex Int)
 
 chunkW, chunkH :: Int
 (chunkW, chunkH) = (16, 128)
@@ -71,50 +73,52 @@ chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
 chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> IO BC.ByteString
-chunkGeom options (texcoords, normals, blockDefs) (c,n,e,s,w) (cX,cZ) = do
-    let (verts, geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
-                foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) (M.empty, B.empty) .
-                groupOn fst $ concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) -> ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
-                                         f (snd $ blockLookup (x,y,z))
-                                         (fst $ blockLookup (x,y,z), fst $ blockLookup (x-1,y,z), fst $ blockLookup (x,y,z-1),
-                                          fst $ blockLookup (x+1,y,z), fst $ blockLookup (x,y,z+1), fst $ blockLookup (x,y+1,z),
-                                          fst $ blockLookup (x,y-1,z)))
-                                         (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
-                                     | x' <- [0..chunkW - 1]
-                                     , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
-                                     , z' <- [0..chunkW - 1]
-                                     , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')]
-    let vertices = B.concat . M.elems $ M.foldrWithKey (\(x,y,z) i vs ->
-            M.insert (-i) (BC.intercalate " " $ "v" : map (BC.pack . printf "%.3f") [x,y,z] ++ ["\n"]) vs) M.empty verts
-    putStrLn $ printf "Processing chunk (%d, %d)" cX cZ
-    return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ, vertices,
-        BC.pack $ uncurry (printf "vt %.3f %.3f\n") =<< texcoords,
-        BC.pack $ (\(nx,ny,nz) -> printf "vn %.3f %.3f %.3f\n" nx ny nz) =<< normals, geom]
-    where
-        blockLookup :: Location -> (Int, Int)
-        blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if bottom options then (0,0) else (1,0)) else
+chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) = do
+    let blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if bottom options then (0,0) else (1,0)) else
             let i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
             in  maybe (if sides options then (0,0) else (1,0))
                       ((fromIntegral . flip B.index i) ***
                        (fromIntegral . (if odd i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
                     case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
-                         (LT,_) -> s
-                         (GT,_) -> n
-                         (_,LT) -> w
-                         (_,GT) -> e
-                         _      -> c
+                         (LT,_) -> s; (GT,_) -> n; (_,LT) -> w; (_,GT) -> e; _ -> c
+    let faces = concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) -> ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
+                           f (snd $ blockLookup (x,y,z)) (bc,bn,be,bs,bw,bt,bb))
+                           (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
+                       | x' <- [0..chunkW - 1]
+                       , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
+                       , z' <- [0..chunkW - 1]
+                       , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')
+                       , let [bc,bn,be,bs,bw,bt,bb] = map (fst . blockLookup)
+                                [(x,y,z), (x-1,y,z), (x,y,z-1), (x+1,y,z), (x,y,z+1), (x,y+1,z), (x,y-1,z)]]
+    let ((vm, tm, nm), geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
+            foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) ((M.empty, M.empty, M.empty), B.empty) $ groupOn fst faces
+    putStrLn $ printf "Processing chunk (%d, %d)" cX cZ
+    return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ,
+                        indexString "v"  (\(x,y,z) -> [x,y,z]) vm, 
+                        indexString "vt" (\(x,y)   -> [x,y]  ) tm,
+                        indexString "vn" (\(x,y,z) -> [x,y,z]) nm,
+                        geom]
+
+indexString :: BC.ByteString -> (b -> [Double]) -> M.Map b Int -> BC.ByteString
+indexString prefix toCoords = B.concat .
+    map ((`B.append` "\n") . BC.intercalate " " . (prefix :) .
+         map (BC.pack . printf "%.3f") . toCoords . fst) .
+    K.sort (negate . snd) . M.assocs
 
 groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
 
-addFace :: (M.Map Vertex Int, B.ByteString) -> Face -> (M.Map Vertex Int, B.ByteString)
-addFace (!vs, !gs) f = second
-    (flip B.append gs . BC.intercalate " " . ("f" :) . (++ ["\n"]) .
-        zipWith (\(_,ti,ni) vi -> BC.intercalate "/" $ map (BC.pack . show) [-vi,ti,ni]) f) $
-    foldr (\(v,_,_) (m, is) -> maybe (M.insert v (M.size m + 1) m, (M.size m + 1) : is)
-        (\i -> (m, i:is)) $ M.lookup v m) (vs, []) f
+addFace :: (Indexes, B.ByteString) -> Face -> (Indexes, B.ByteString)
+addFace ((!vs, !ts, !ns), !gs) = second
+    ((`B.append` gs) . (`B.append` "\n") . BC.intercalate " " . ("f" :)) .
+    foldr (\(v,t,n) ((vm, tm, nm), is) ->
+        let (vm',vi) = getIndex v vm
+            (tm',ti) = getIndex t tm
+            (nm',ni) = getIndex n nm
+        in  ((vm', tm', nm'), BC.intercalate "/" (map (BC.pack . show) [-vi,-ti,-ni]) : is)) ((vs, ts, ns), []) where
+    getIndex x xm = maybe (M.insert x (M.size xm + 1) xm, M.size xm + 1) ((,) xm) $ M.lookup x xm
 
-loadBlockDefs :: FilePath -> IO ([(Double, Double)], [Vertex], I.IntMap (Int -> (Int, Int, Int, Int, Int, Int, Int) -> [(String, Face)]))
+loadBlockDefs :: FilePath -> IO BlockDefs
 loadBlockDefs file = fmap (either (error . show) id) $
     runInterpreter . blocks =<< readFile file
 
@@ -123,5 +127,5 @@ blocks file = do
     loadModules ["blocks_util.hs"]
     setImportsQ [("Prelude", Nothing)]
     setTopLevelModules ["BlockUtil"]
-    fmap (\(ts,ns,bs) -> (ts,ns,I.fromList $ map (first fromIntegral) bs)) $
-        interpret file (as :: ([(Double, Double)], [Vertex], [(Int, Int -> (Int, Int, Int, Int, Int, Int, Int) -> [(String, Face)])]))
+    fmap (I.fromList . map (first fromIntegral)) $
+        interpret file (as :: ([(Int, Int -> Neighbors -> [(String, Face)])]))
