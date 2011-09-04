@@ -16,8 +16,14 @@ unless you know Haskell. Currently supported:
 
 * Converting a group of chunks to .obj format
 * Materials for naturally occurring blocks
-* Geometry for naturally occurring full blocks
+* Geometry for most blocks
 * A few options (min and max y height, show/hide sides and bottoms of chunks)
+
+Known bugs:
+
+* Water and lava flows are stepped rather than sloped. Code change required.
+* Signs have no text. I have yet to come up with a good way of doing this.
+* Redstone wire does not display correctly. Code change required.
 
 Below are two work in progress shots showing a section of terrain of 32x32
 chunks. All the pink blocks are ones I have yet to implement the material for.

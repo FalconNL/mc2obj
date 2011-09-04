@@ -1,4 +1,7 @@
-fix plants, slanted torches, remaining blocks
+check cake orientation
+check repeater orientation
+fix fence texture coordinates
+remaining blocks
 
 command line args
 

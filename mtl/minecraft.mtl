@@ -477,6 +477,10 @@ newmtl Furnace_Lit
 Kd 0.3059 0.3059 0.3059
 map_Kd tex/furnace_lit.png
 
+newmtl Sign
+Kd 0.6157 0.5020 0.3098
+map_Kd tex/sign.png
+
 newmtl Door_Wood_Top
 Kd 0.6157 0.5020 0.3098
 map_Kd tex/door_wood_top.png
