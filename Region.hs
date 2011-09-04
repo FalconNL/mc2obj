@@ -11,6 +11,7 @@ import Data.ByteString.Lazy.Char8 ()
 import qualified Data.IntMap as I
 import Data.List
 import Data.Word
+import System.Directory
 
 data Tag = TAG_End | TAG_Byte Word8 | TAG_Short Word16 | TAG_Int Word32
          | TAG_Long Word64 | TAG_Float Float | TAG_Double Double
@@ -53,7 +54,8 @@ chunk len = int *> byte *> (B.concat . BL.toChunks . decompress . BL.fromChunks 
                                 (getByteString . fromIntegral $ len * 4096 - 5))
 
 loadRegion :: FilePath -> IO (I.IntMap Tag)
-loadRegion file = run getRegion <$> B.readFile file
+loadRegion file = doesFileExist file >>=
+    \exist -> if exist then run getRegion <$> B.readFile file else return I.empty
 
 run :: Get a -> B.ByteString -> a
 run p = either error id . fst . runGet p

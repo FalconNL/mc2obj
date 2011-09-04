@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings, BangPatterns #-}
 
-module ObjExport (defaultOptions, export, exportWith, loadBlockDefs,
-    bottom, sides, yFrom, yTo) where
+module ObjExport (export, ExportOptions(..)) where
 
 import Control.Arrow
 import qualified Data.ByteString as B
@@ -11,14 +10,13 @@ import qualified Data.List.Key as K
 import qualified Data.IntMap as I
 import qualified Data.Map as M
 import qualified Data.Set as S
-import Language.Haskell.Interpreter
 import System.FilePath
 import System.IO
 import Text.Printf
 import Region
 
 data Orientation = E | W | N | S | T | B deriving (Enum, Eq, Show)
-data ExportOptions = ExportOptions { bottom :: Bool, sides :: Bool, yFrom :: Int, yTo :: Int }
+data ExportOptions = ExportOptions { showBottom :: Bool, showSides :: Bool, yFrom :: Int, yTo :: Int }
 
 type TexCoord = (Double, Double)
 type Vertex = (Double, Double, Double)
@@ -33,20 +31,14 @@ type Indexes = (M.Map Vertex Int, M.Map TexCoord Int, M.Map Vertex Int)
 chunkW, chunkH :: Int
 (chunkW, chunkH) = (16, 128)
 
-export :: BlockDefs -> FilePath -> FilePath -> [Coord] -> IO ()
-export = exportWith defaultOptions
-
-exportWith :: ExportOptions -> BlockDefs -> FilePath -> FilePath -> [Coord] -> IO ()
-exportWith options blockDefs regionDir file chunks = do
+export :: ExportOptions -> BlockDefs -> FilePath -> FilePath -> [Coord] -> IO ()
+export options blockDefs regionDir file chunks = do
     h <- openFile file WriteMode
     B.hPutStrLn h "mtllib minecraft.mtl\n"
     world <- loadWorld regionDir chunks
     mapM_ (\(i,c) -> B.hPutStrLn h =<< chunkGeom options blockDefs c i) world
     hClose h
     putStrLn "Done."
-
-defaultOptions :: ExportOptions
-defaultOptions = ExportOptions False False 0 127
 
 loadWorld :: FilePath -> [Coord] -> IO [(Coord, BorderedChunk)]
 loadWorld regionDir cs = do
@@ -74,9 +66,9 @@ chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
 
 chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> IO BC.ByteString
 chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) = do
-    let blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if bottom options then (0,0) else (1,0)) else
+    let blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if showBottom options then (0,0) else (1,0)) else
             let i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
-            in  maybe (if sides options then (0,0) else (1,0))
+            in  maybe (if showSides options then (0,0) else (1,0))
                       ((fromIntegral . flip B.index i) ***
                        (fromIntegral . (if odd i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
                     case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
@@ -90,7 +82,7 @@ chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) = do
                        , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')
                        , let [bc,bn,be,bs,bw,bt,bb] = map (fst . blockLookup)
                                 [(x,y,z), (x-1,y,z), (x,y,z-1), (x+1,y,z), (x,y,z+1), (x,y+1,z), (x,y-1,z)]]
-    let ((vm, tm, nm), geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
+    let ((!vm, !tm, !nm), !geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
             foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) ((M.empty, M.empty, M.empty), B.empty) $ groupOn fst faces
     putStrLn $ printf "Processing chunk (%d, %d)" cX cZ
     return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ,
@@ -99,14 +91,13 @@ chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) = do
                         indexString "vn" (\(x,y,z) -> [x,y,z]) nm,
                         geom]
 
-indexString :: BC.ByteString -> (b -> [Double]) -> M.Map b Int -> BC.ByteString
-indexString prefix toCoords = B.concat .
-    map ((`B.append` "\n") . BC.intercalate " " . (prefix :) .
-         map (BC.pack . printf "%.3f") . toCoords . fst) .
-    K.sort (negate . snd) . M.assocs
-
 groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
+
+indexString :: BC.ByteString -> (a -> [Double]) -> M.Map a Int -> BC.ByteString
+indexString prefix toCoords = BC.unlines . map (BC.unwords . (prefix :) .
+        map (\x -> BC.pack $ printf (if abs (fromIntegral (round x) - x) < 0.005 then "%.0f" else "%.3f") x) . toCoords . fst) .
+    K.sort (negate . snd) . M.assocs
 
 addFace :: (Indexes, B.ByteString) -> Face -> (Indexes, B.ByteString)
 addFace ((!vs, !ts, !ns), !gs) = second
@@ -117,15 +108,3 @@ addFace ((!vs, !ts, !ns), !gs) = second
             (nm',ni) = getIndex n nm
         in  ((vm', tm', nm'), BC.intercalate "/" (map (BC.pack . show) [-vi,-ti,-ni]) : is)) ((vs, ts, ns), []) where
     getIndex x xm = maybe (M.insert x (M.size xm + 1) xm, M.size xm + 1) ((,) xm) $ M.lookup x xm
-
-loadBlockDefs :: FilePath -> IO BlockDefs
-loadBlockDefs file = fmap (either (error . show) id) $
-    runInterpreter . blocks =<< readFile file
-
-blocks :: String -> Interpreter BlockDefs
-blocks file = do
-    loadModules ["blocks_util.hs"]
-    setImportsQ [("Prelude", Nothing)]
-    setTopLevelModules ["BlockUtil"]
-    fmap (I.fromList . map (first fromIntegral)) $
-        interpret file (as :: ([(Int, Int -> Neighbors -> [(String, Face)])]))

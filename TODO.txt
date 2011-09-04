@@ -1,11 +1,4 @@
-check cake orientation
-check repeater orientation
-fix fence texture coordinates
-remaining blocks
+fix water/lava flows
 
-command line args
-
-options: xRange, zRange, rect/circle
-
-parallelize program by making chunkGeom world -> Coord -> ByteString, parMapping chunkGeom over chunks (using dph-base or repa)
-    and B.concatting at the end
+parallelize program by parMapping chunkGeom over chunks
+    (using dph-base or repa) and B.concatting at the end
