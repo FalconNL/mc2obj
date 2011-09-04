@@ -9,8 +9,8 @@ type Neighbors = (Int, Int, Int, Int, Int, Int, Int)
 type BlockSize = ((Double, Double, Double), (Double, Double, Double))
 type Materials = (String, String, String, String, String, String)
 
-occlude :: Bool -> Neighbors -> [(String, Face)] -> [(String, Face)]
-occlude self (c,n,e,s,w,t,b) = filter (\(_,vs) -> not $
+cull :: Bool -> Neighbors -> [(String, Face)] -> [(String, Face)]
+cull self (c,n,e,s,w,t,b) = filter (\(_,vs) -> not $
     (hide self c n && test (\(_,y,_) -> y ==  0) vs) ||
     (hide self c e && test (\(x,_,_) -> x ==  0) vs) ||
     (hide self c s && test (\(_,y,_) -> y == -1) vs) ||
@@ -24,7 +24,7 @@ hide self c t = (self && c == t) || IS.member (fromIntegral t) solidIDs
 
 solidIDs :: IS.IntSet
 solidIDs = IS.fromAscList $ [1..5] ++ [7] ++ [11..17] ++ [19] ++ [21..25] ++
-                            [29,33,35,36] ++ [41..43] ++ [45..49] ++ [54,56,57,58] ++
+                            [35,36] ++ [41..43] ++ [45..49] ++ [54,56,57,58] ++
                             [60..62] ++ [73,74,78,79,80,82,84] ++ [86..89] ++ [91,95]
 
 north, east, south, west, top, bottom :: Vertex
@@ -80,13 +80,13 @@ second f (a,b) = (a, f b)
 ------------
 
 block :: String -> Neighbors -> [(String, Face)]
-block m ns = occlude True ns $ box (uniform m) fullBlock
+block m ns = cull True ns $ box (uniform m) fullBlock
 
 blockSTB :: String -> String -> String -> Neighbors -> [(String, Face)]
-blockSTB ms mt mb ns = occlude True ns $ box (stb ms mt mb) fullBlock
+blockSTB ms mt mb ns = cull True ns $ box (stb ms mt mb) fullBlock
 
 blockFST :: String -> String -> String -> Int -> Neighbors -> [(String, Face)]
-blockFST mf ms mt rot ns = occlude True ns . map (second $ rotateZ rot) $ box (ms,ms,mf,ms,mt,mt) fullBlock
+blockFST mf ms mt rot ns = cull True ns . map (second $ rotateZ rot) $ box (ms,ms,mf,ms,mt,mt) fullBlock
 
 plant :: String -> [(String, Face)]
 plant m = map ((,) m . (`rotateZ` sw)) [0..3] where
@@ -98,19 +98,19 @@ sides :: String -> Double -> [(String, Face)]
 sides m o = [faceNorth, faceEast, faceSouth, faceWest] >>= \f -> f (0,0) (1,1) o m
 
 leaf :: String -> Neighbors -> [(String, Face)]
-leaf m ns = occlude False ns $ box (uniform m) fullBlock
+leaf m ns = cull False ns $ box (uniform m) fullBlock
 
 slab :: String -> String -> String -> Neighbors -> [(String, Face)]
-slab ms mt mb ns = occlude True ns $ box (stb ms mt mb) ((0,0,0), (1,1,1/2))
+slab ms mt mb ns = cull True ns $ box (stb ms mt mb) ((0,0,0), (1,1,1/2))
 
-workbench :: String -> String -> String -> String -> Neighbors -> [(String, Face)]
-workbench mf ms mt mb ns = occlude True ns $ box (mf,ms,mf,ms,mt,mb) fullBlock
+workbench :: String -> String -> String -> String -> Neighbors -> [(String, Face)]
+workbench mf ms mt mb ns = cull True ns $ box (mf,ms,mf,ms,mt,mb) fullBlock
 
 snow :: String -> Neighbors -> [(String, Face)]
-snow m ns = occlude True ns $ box (uniform m) ((0,0,0), (1,1,1/8))
+snow m ns = cull True ns $ box (uniform m) ((0,0,0), (1,1,1/8))
 
 stairs :: String -> Int -> Neighbors -> [(String, Face)]
-stairs m rot ns = occlude False ns . map (second $ rotateZ rot) $
+stairs m rot ns = cull False ns . map (second $ rotateZ rot) $
     stairNorth ++ stairSouth ++
     faceWest (0,0) (1,1/2) 0 m ++ faceWest (0,1/2) (1,1) (1/2) m ++
     faceTop (0,0) (1,1/2) (1/2) m ++ faceTop (0,1/2) (1,1) 0 m ++
@@ -122,7 +122,7 @@ stairs m rot ns = occlude False ns . map (second $ rotateZ rot) $
           stairSouth = map (second $ reverse . map (\((x,_,z),t,_) -> ((x,-1,z),t,south))) stairNorth
 
 bed :: Bool -> Int -> Neighbors -> [(String, Face)]
-bed isHead rot ns = occlude False ns . map (second $ rotateZ rot) $
+bed isHead rot ns = cull False ns . map (second $ rotateZ rot) $
     (if isHead then faceSouth (0,0) (1,9/16) 0 f else faceNorth (0,0) (1,9/16) 0 f) ++
     faceTop (0,0) (1,1) (7/16) t ++ faceWest (0,0) (1,9/16) 0 s ++
     modifyTexcoords (\(tx,ty) -> (1-tx,ty)) (faceEast (0,0) (1,9/16) 0 s)
@@ -158,10 +158,52 @@ trackStraight d m = case mod d 8 of 1 -> map (second $ rotateZ 1) $ trackFlat m
                                     5 -> map (second $ rotateZ 3) $ trackIncline m
                                     _ -> trackFlat m
 
--- piston d m = case mod d 8 of 0 -> []
---                              1 -> []
---                              2 -> []
---                              3 -> []
---                              4 -> []
---                              _ -> []
---     where h = if div d 8 == 1 then 12/16 else 1
+piston :: Int -> String -> Neighbors -> [(String, Face)]
+piston d m ns = cull False ns $ case mod d 8 of
+    0 -> map (second $ rotateY 2) base
+    1 -> base
+    2 -> map (second $ rotateY 1) base
+    3 -> map (second $ rotateZ 2) $ map (second $ rotateY 1) base
+    4 -> map (second $ rotateZ 3) $ map (second $ rotateY 1) base
+    _ -> map (second $ rotateZ 1) $ map (second $ rotateY 1) base
+    where base = box (stb ms (if extended then mt else m) mb)
+                     ((0,0,0),(1,1,if extended then 3/4 else 1))
+          extended = div d 8 == 1
+          ms = "Piston_Side"
+          mt = "Piston_Top"
+          mb = "Piston_Bottom"
+
+pistonExtension :: Int -> Neighbors -> [(String, Face)]
+pistonExtension d ns = cull False ns $ case mod d 8 of
+    0 -> map (second $ rotateY 2) extension
+    1 -> extension
+    2 -> map (second $ rotateY 1) extension
+    3 -> map (second $ rotateZ 2) $ map (second $ rotateY 1) extension
+    4 -> map (second $ rotateZ 3) $ map (second $ rotateY 1) extension
+    _ -> map (second $ rotateZ 1) $ map (second $ rotateY 1) extension
+    where extension = map (((,) ms) . (`rotateZ` rodSouth)) [0..3] ++
+                      box (stb ms mt mb) ((0,0,3/4),(1,1,1))
+          rodSouth = [((-5/8,-5/8,-1/4),(0,  1),south), ((-3/8,-5/8,-1/4),(0,3/4),south)
+                     ,((-3/8,-5/8, 3/4),(1,3/4),south), ((-5/8,-5/8, 3/4),(1,  1),south)]
+          ms = "Piston_Side"
+          mt = if div d 8 == 1 then "Piston_Sticky" else "Piston"
+          mb = "Piston"
+
+button :: Int -> Neighbors -> [(String, Face)]
+button rot ns = cull False ns . map (second $ rotateZ rot) $
+    box (uniform "Stone") ((7/8, 5/16, 3/8), (1, 11/16, 5/8))
+
+portal :: Neighbors -> [(String, Face)]
+portal ns@(_,n,_,s,_,_,_) = cull True ns .
+    map (second . rotateZ $ if n == 90 || s == 90 then 1 else 0) $
+    box (uniform "Portal") ((3/8,0,0), (5/8,1,1))
+
+pressurePlate :: String -> Neighbors -> [(String, Face)]
+pressurePlate m ns = cull False ns $ box (uniform m) ((1/16,1/16,0), (15/16,15/16,1/16))
+
+-- chest (_,n,e,s,w,_,_) =
+--     if n == 54 then  else
+--     if e == 54 then  else
+--     if s == 54 then  else
+--     if w == 54 then 
+--     where l = 

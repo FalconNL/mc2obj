@@ -10,9 +10,9 @@
                                  _ -> "Sapling_Oak")
 ,( 7, \_    -> block "Bedrock")
 ,( 8, \_    -> block "Water")
-,( 9, \_    -> block "Unknown")
+,( 9, \_    -> block "Water") --TODO: Fix
 ,(10, \_    -> block "Lava")
-,(11, \_    -> block "Unknown")
+,(11, \_    -> block "Lava") --TODO: Fix
 ,(12, \_    -> block "Sand")
 ,(13, \_    -> block "Gravel")
 ,(14, \_    -> block "Ore_Gold")
@@ -32,14 +32,14 @@
 ,(26, \d    -> bed (div d 8 == 1) (case mod d 4 of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
 ,(27, \d _  -> trackStraight d $ if div d 8 == 1 then "Rails_Powered_On" else "Rails_Powered_Off")
 ,(28, \d _  -> trackStraight d "Rails_Detector")
-,(29, \_    -> block "Unknown")
+,(29, \d    -> piston d "Piston_Sticky")
 ,(30, \_ _  -> plant "Cobweb")
 ,(31, \d _  -> plant $ case d of 1 -> "Tall_Grass"
                                  2 -> "Fern"
                                  _ -> "Dead_Shrub")
 ,(32, \_ _  -> plant "Dead_Shrub")
-,(33, \_    -> block "Unknown")
-,(34, \_    -> block "Unknown")
+,(33, \d    -> piston d "Piston")
+,(34, \d    -> pistonExtension d)
 ,(35, \d    -> block $ "Wool_" ++ (case d of 1  -> "Orange"
                                              2  -> "Magenta"
                                              3  -> "Light_Blue"
@@ -97,18 +97,18 @@
 ,(67, \d    -> stairs "Cobblestone" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
 ,(68, \_    -> block "Unknown")
 ,(69, \_    -> block "Unknown")
-,(70, \_    -> block "Unknown")
+,(70, \_    -> pressurePlate "Stone")
 ,(71, \_    -> block "Unknown")
-,(72, \_    -> block "Unknown")
+,(72, \_    -> pressurePlate "Wood")
 ,(73, \_    -> block "Ore_Redstone")
 ,(74, \_    -> block "Ore_Redstone")
 ,(75, \d _  -> torch d "Redstone_Torch_Off")
 ,(76, \d _  -> torch d "Redstone_Torch_On")
-,(77, \_    -> block "Unknown")
+,(77, \d    -> button $ case d of 1 -> 0; 2 -> 2; 3 -> 1; _ -> 3)
 ,(78, \_    -> snow "Snow")
 ,(79, \_    -> block "Ice")
 ,(80, \_    -> block "Snow")
-,(81, \_ ns -> sides "Cactus_Side" (1/16) ++ occlude True ns
+,(81, \_ ns -> sides "Cactus_Side" (1/16) ++ cull True ns
                    (faceTop (0,0) (1,1) 0 "Cactus_Top" ++
                     faceBottom (0,0) (1,1) 0 "Cactus_Bottom"))
 ,(82, \_    -> block "Clay")
@@ -119,7 +119,7 @@
 ,(87, \_    -> block "Netherrack")
 ,(88, \_    -> block "Soul_Sand")
 ,(89, \_    -> block "Glowstone")
-,(90, \_    -> block "Unknown")
+,(90, \_    -> portal)
 ,(91, \d    -> blockFST "Pumpkin_Lit" "Pumpkin_Side" "Pumpkin_Top" (case d of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
 ,(92, \_    -> block "Unknown")
 ,(93, \_    -> block "Unknown")
