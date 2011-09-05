@@ -24,8 +24,7 @@ type Face = [(Vertex, TexCoord, Vertex)]
 type Coord = (Int, Int)
 type Chunk = (B.ByteString, B.ByteString)
 type BorderedChunk = (Maybe Chunk, Maybe Chunk, Maybe Chunk, Maybe Chunk, Maybe Chunk)
-type Neighbors = (Int, Int, Int, Int, Int, Int, Int)
-type BlockDefs = I.IntMap (Int -> Neighbors -> [(String, Face)])
+type BlockDefs = I.IntMap (Int -> ((Int, Int, Int) -> (Int, Int)) -> [(String, Face)])
 type Indexes = (M.Map Vertex Int, M.Map TexCoord Int, M.Map Vertex Int)
 
 chunkW, chunkH :: Int
@@ -79,14 +78,12 @@ chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) (ci,cs) = do
         _       -> do
             let faces = concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) ->
                                                       ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
-                                   f (snd $ blockLookup (x,y,z)) (bc,bn,be,bs,bw,bt,bb))
+                                   f (snd $ blockLookup (x,y,z)) (\(bx,by,bz) -> blockLookup (x+bx,y+by,z+bz)))
                                    (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
                                | x' <- [0..chunkW - 1]
                                , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
                                , z' <- [0..chunkW - 1]
-                               , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')
-                               , let [bc,bn,be,bs,bw,bt,bb] = map (fst . blockLookup)
-                                        [(x,y,z), (x-1,y,z), (x,y,z-1), (x+1,y,z), (x,y,z+1), (x,y+1,z), (x,y-1,z)]]
+                               , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')]
             let ((!vm, !tm, !nm), !geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
                     foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) ((M.empty, M.empty, M.empty), B.empty) $ groupOn fst faces
             putStrLn $ printf "%*d/%d: Processing chunk (%d, %d)" (length $ show cs) ci cs cX cZ

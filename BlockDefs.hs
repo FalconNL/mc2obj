@@ -6,7 +6,7 @@ import qualified Data.IntSet as IS
 type Vertex    = (Double, Double, Double)
 type TexCoord  = (Double, Double)
 type Face      = [(Vertex, TexCoord, Vertex)]
-type Neighbors = (Int, Int, Int, Int, Int, Int, Int)
+type Neighbors = ((Int, Int, Int) -> (Int, Int))
 type BlockSize = ((Double, Double, Double), (Double, Double, Double))
 type Materials = (String, String, String, String, String, String)
 
@@ -14,8 +14,8 @@ blockDefs :: I.IntMap (Int -> Neighbors -> [(String, Face)])
 blockDefs = I.fromList
     [( 0, \_ _  -> [])
     ,( 1, \_    -> block "Stone")
-    ,( 2, \_ ns@(_,_,_,_,_,t,_) -> case t of 78 -> blockSTB "Dirt_Snow" "Snow" "Dirt" ns 
-                                             _  -> blockSTB "Dirt_Grass" "Grass_Top" "Dirt" ns)
+    ,( 2, \_ ns -> case (fst $ ns neighborTop) of 78 -> blockSTB "Dirt_Snow" "Snow" "Dirt" ns 
+                                                  _  -> blockSTB "Dirt_Grass" "Grass_Top" "Dirt" ns)
     ,( 3, \_    -> block "Dirt")
     ,( 4, \_    -> block "Cobblestone")
     ,( 5, \_    -> block "Wood")
@@ -144,17 +144,19 @@ blockDefs = I.fromList
 
 --Can only be used for non-rotated full blocks
 fastCull :: Neighbors -> [(String, Face)] -> [(String, Face)]
-fastCull (c,n,e,s,w,t,b) = concat . zipWith (\x f -> if hide True c x then [] else [f]) [n,e,s,w,t,b]
+fastCull ns = concat . zipWith (\x f -> if hide True (fst $ ns (0,0,0)) (fst $ ns x) then [] else [f])
+    [neighborNorth,neighborEast,neighborSouth,neighborWest,neighborTop,neighborBottom]
 
 cull :: Bool -> Neighbors -> [(String, Face)] -> [(String, Face)]
-cull self (c,n,e,s,w,t,b) = filter (\(_,vs) -> not $
-    (hide self c n && test (\(_,y,_) -> y ==  0) vs) ||
-    (hide self c e && test (\(x,_,_) -> x ==  0) vs) ||
-    (hide self c s && test (\(_,y,_) -> y == -1) vs) ||
-    (hide self c w && test (\(x,_,_) -> x == -1) vs) ||
-    (hide self c t && test (\(_,_,z) -> z ==  1) vs) ||
-    (hide self c b && test (\(_,_,z) -> z ==  0) vs))
+cull self ns = filter (\(_,vs) -> not $
+    (hide self c (fst $ ns neighborNorth ) && test (\(_,y,_) -> y ==  0) vs) ||
+    (hide self c (fst $ ns neighborEast  ) && test (\(x,_,_) -> x ==  0) vs) ||
+    (hide self c (fst $ ns neighborSouth ) && test (\(_,y,_) -> y == -1) vs) ||
+    (hide self c (fst $ ns neighborWest  ) && test (\(x,_,_) -> x == -1) vs) ||
+    (hide self c (fst $ ns neighborTop   ) && test (\(_,_,z) -> z ==  1) vs) ||
+    (hide self c (fst $ ns neighborBottom) && test (\(_,_,z) -> z ==  0) vs))
     where test f = all (\(v,_,_) -> f v)
+          c = fst $ ns (0,0,0)
 
 hide :: Bool -> Int -> Int -> Bool
 hide self c t = (self && c == t) || IS.member (fromIntegral t) solidIDs
@@ -171,6 +173,14 @@ south  = ( 0,-1, 0)
 west   = (-1, 0, 0)
 top    = ( 0, 0, 1)
 bottom = ( 0, 0,-1)
+
+neighborNorth, neighborEast, neighborSouth, neighborWest, neighborTop, neighborBottom :: (Int, Int, Int)
+neighborNorth  = (-1, 0, 0)
+neighborEast   = ( 0, 0,-1)
+neighborSouth  = ( 1, 0, 0)
+neighborWest   = ( 0, 0, 1)
+neighborTop    = ( 0, 1, 0)
+neighborBottom = ( 0,-1, 0)
 
 face :: TexCoord -> TexCoord -> Vertex -> [Vertex] -> String -> [(String, Face)]
 face (blX,blY) (trX,trY) vn cs m = [(m, zip3 cs [(blX,blY), (trX,blY), (trX,trY), (blX,trY)] (repeat vn))]
@@ -281,9 +291,9 @@ bed isHead rot ns = cull False ns . map (second $ rotateZ rot) $
 
 --TODO: texcoords
 fence :: Neighbors -> [(String, Face)]
-fence (_,n,e,_,_,_,_) = (if n == 85 then fence_beam 3 (6/16) ++ fence_beam 3 (12/16) else []) ++
-                        (if e == 85 then fence_beam 0 (6/16) ++ fence_beam 0 (12/16) else []) ++
-                        box (uniform "Wood") ((3/8,3/8,0), (5/8,5/8,1)) where
+fence ns = (if fst (ns neighborNorth) == 85 then fence_beam 3 (6/16) ++ fence_beam 3 (12/16) else []) ++
+           (if fst (ns neighborEast ) == 85 then fence_beam 0 (6/16) ++ fence_beam 0 (12/16) else []) ++
+           box (uniform "Wood") ((3/8,3/8,0), (5/8,5/8,1)) where
     fence_beam rot h = map (second $ rotateZ rot) $ box (uniform "Wood") ((7/16,5/8,h), (9/16,11/8,h+3/16))
 
 torch :: Int -> String -> [(String, Face)]
@@ -356,8 +366,8 @@ button rot ns = cull False ns . map (second $ rotateZ rot) $
     box (uniform "Stone") ((7/8, 5/16, 3/8), (1, 11/16, 5/8))
 
 portal :: Neighbors -> [(String, Face)]
-portal ns@(_,n,_,s,_,_,_) = cull True ns .
-    map (second . rotateZ $ if n == 90 || s == 90 then 1 else 0) $
+portal ns = cull True ns .
+    map (second . rotateZ $ if fst (ns neighborNorth) == 90 || fst (ns neighborSouth) == 90 then 1 else 0) $
     box (uniform "Portal") ((3/8,0,0), (5/8,1,1))
 
 pressurePlate :: String -> Neighbors -> [(String, Face)]
@@ -370,8 +380,8 @@ hatch d ns = cull False ns $ case div d 4 of
     where flat = faceTop (0,0) (1,1) (13/16) "Hatch" ++ faceBottom (0,0) (1,1) 0 "Hatch" ++
                      ([faceNorth, faceEast, faceSouth, faceWest] >>= \f -> f (0,0) (1,3/16) 0 "Hatch")
 
-chest :: (Int, Int, Int, Int, Int, Int, Int) -> [(String, Face)]
-chest ns@(_,n,e,s,w,_,_) = cull True ns $
+chest :: Neighbors -> [(String, Face)]
+chest ns = cull True ns $
     if n == 54 then map (second $ rotateZ 1) r else
     if e == 54 then l else
     if s == 54 then map (second $ rotateZ 1) l else
@@ -381,6 +391,7 @@ chest ns@(_,n,e,s,w,_,_) = cull True ns $
                                                      if w /= 0 then 3 else 1) ns
     where l = box ("Chest_Left_Back","","Chest_Left_Front","Chest_Side","Chest_Top","Chest_Top") ((0,0,0),(1,1,1))
           r = box ("Chest_Right_Back","Chest_Side","Chest_Right_Front","","Chest_Top","Chest_Top") ((0,0,0),(1,1,1))
+          [n,e,s,w] = map (fst . ns) [neighborNorth, neighborEast, neighborSouth, neighborWest]
 
 door :: String -> String -> Int -> Neighbors -> [(String, Face)]
 door mt mb d ns = cull False ns . map (second $ rotateZ (3 * div (mod d 8) 4 + case mod d 4 of 0 -> 2; 1 -> 3; 2 -> 0; _ -> 1)) $
