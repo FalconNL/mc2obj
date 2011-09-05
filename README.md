@@ -92,7 +92,8 @@ __How do I use a custom texture pack?__
 Make sure you have [ImageMagick](http://www.imagemagick.org/script/binary-releases.php)
 installed. Put the required texture files (terrain.png, fire.png, portal.png and sign.png)
 in the texsplit folder. Run texsplit.bat. The next time you export a world it will
-use the new texture pack.
+use the new texture pack. Alternatively, replace the tex folder in your output directory
+with the one in the texplit folder to avoid having to recompile.
 
 __Texsplit doesn't work on Linux/Mac__  
 Again, I've yet to set up the virtual machines so for the time being you'll have to
