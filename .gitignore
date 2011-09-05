@@ -4,5 +4,7 @@
 *.hp
 *.prof
 *.ps
+*.max
+*.zip
 bin/*
 mc2obj test/*

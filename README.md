@@ -49,6 +49,11 @@ to set up some virtual machines to do this. In the meantime, you can install the
 yourself. For now you'll need to install the dependencies manually. I'll put the
 next version on Hackage to automate this.
 
+__How do I run this program/what do I do with these .hs files?__  
+If you just want to run the program, make sure you're getting the binary release
+(click the big Downloads button in the top right of the Github page) isntead of
+the source code.
+
 __I've found a bug__  
 Please check the Known Bugs section below to see if it's in there.
 If not, please let me know so I can fix it. Just add a new issue on

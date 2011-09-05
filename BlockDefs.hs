@@ -252,13 +252,13 @@ leaf :: String -> Neighbors -> [(String, Face)]
 leaf m ns = cull False ns $ box (uniform m) fullBlock
 
 slab :: String -> String -> String -> Neighbors -> [(String, Face)]
-slab ms mt mb ns = fastCull ns $ box (stb ms mt mb) ((0,0,0), (1,1,1/2))
+slab ms mt mb ns = cull True ns $ box (stb ms mt mb) ((0,0,0), (1,1,1/2))
 
 workbench :: String -> String -> String -> String -> Neighbors -> [(String, Face)]
 workbench mf ms mt mb ns = fastCull ns $ box (mf,ms,mf,ms,mt,mb) fullBlock
 
 snow :: String -> Neighbors -> [(String, Face)]
-snow m ns = fastCull ns $ box (uniform m) ((0,0,0), (1,1,1/8))
+snow m ns = cull True ns $ box (uniform m) ((0,0,0), (1,1,1/8))
 
 stairs :: String -> Int -> Neighbors -> [(String, Face)]
 stairs m rot ns = cull False ns . map (second $ rotateZ rot) $
