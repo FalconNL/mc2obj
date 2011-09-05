@@ -1,6 +1,4 @@
 fix water/lava flows
 
-output when a chunk is skipped
-
 parallelize program by parMapping chunkGeom over chunks
     (using dph-base or repa) and B.concatting at the end

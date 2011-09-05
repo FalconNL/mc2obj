@@ -36,7 +36,7 @@ export options blockDefs regionDir file chunks = do
     h <- openFile file WriteMode
     B.hPutStrLn h "mtllib minecraft.mtl\n"
     world <- loadWorld regionDir chunks
-    mapM_ (\(i,c) -> B.hPutStrLn h =<< chunkGeom options blockDefs c i) world
+    mapM_ (\(i,(coord,c)) -> B.hPutStrLn h =<< chunkGeom options blockDefs c coord (i, length world)) $ zip [1..] world
     hClose h
     putStrLn "Done."
 
@@ -64,8 +64,8 @@ chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
                  getArray $ navigate ["Level", "Data"] nbt)
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
-chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> IO BC.ByteString
-chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) = do
+chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> (Int, Int) -> IO BC.ByteString
+chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) (ci,cs) = do
     let blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if showBottom options then (0,0) else (1,0)) else
             let i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
             in  maybe (if showSides options then (0,0) else (1,0))
@@ -73,23 +73,28 @@ chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) = do
                        (fromIntegral . (if odd i then flip div 16 else flip mod 16) . flip B.index (div i 2))) $
                     case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
                          (LT,_) -> s; (GT,_) -> n; (_,LT) -> w; (_,GT) -> e; _ -> c
-    let faces = concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) -> ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
-                           f (snd $ blockLookup (x,y,z)) (bc,bn,be,bs,bw,bt,bb))
-                           (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
-                       | x' <- [0..chunkW - 1]
-                       , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
-                       , z' <- [0..chunkW - 1]
-                       , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')
-                       , let [bc,bn,be,bs,bw,bt,bb] = map (fst . blockLookup)
-                                [(x,y,z), (x-1,y,z), (x,y,z-1), (x+1,y,z), (x,y,z+1), (x,y+1,z), (x,y-1,z)]]
-    let ((!vm, !tm, !nm), !geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
-            foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) ((M.empty, M.empty, M.empty), B.empty) $ groupOn fst faces
-    putStrLn $ printf "Processing chunk (%d, %d)" cX cZ
-    return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ,
-                        indexString "v"  (\(x,y,z) -> [x,y,z]) vm, 
-                        indexString "vt" (\(x,y)   -> [x,y]  ) tm,
-                        indexString "vn" (\(x,y,z) -> [x,y,z]) nm,
-                        geom]
+    case c of
+        Nothing -> do putStrLn $ printf "%*d/%d: Skipping chunk (%d, %d): chunk not in world" (length $ show cs) ci cs cX cZ 
+                      return ""
+        _       -> do
+            let faces = concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) ->
+                                                      ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
+                                   f (snd $ blockLookup (x,y,z)) (bc,bn,be,bs,bw,bt,bb))
+                                   (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
+                               | x' <- [0..chunkW - 1]
+                               , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
+                               , z' <- [0..chunkW - 1]
+                               , let (x,y,z) = (cX * chunkW + x', y', cZ * chunkW + z')
+                               , let [bc,bn,be,bs,bw,bt,bb] = map (fst . blockLookup)
+                                        [(x,y,z), (x-1,y,z), (x,y,z-1), (x+1,y,z), (x,y,z+1), (x,y+1,z), (x,y-1,z)]]
+            let ((!vm, !tm, !nm), !geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
+                    foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) ((M.empty, M.empty, M.empty), B.empty) $ groupOn fst faces
+            putStrLn $ printf "%*d/%d: Processing chunk (%d, %d)" (length $ show cs) ci cs cX cZ
+            return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ,
+                                indexString "v"  (\(x,y,z) -> [x,y,z]) vm, 
+                                indexString "vt" (\(x,y)   -> [x,y]  ) tm,
+                                indexString "vn" (\(x,y,z) -> [x,y,z]) nm,
+                                geom]
 
 groupOn :: Ord b => (a -> b) -> [a] -> [[a]]
 groupOn f = K.group f . K.sort f
