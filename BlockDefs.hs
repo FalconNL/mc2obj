@@ -24,9 +24,9 @@ blockDefs = I.fromList
                                      _ -> "Sapling_Oak")
     ,( 7, \_    -> block "Bedrock")
     ,( 8, \_    -> block "Water")
-    ,( 9, \d    -> liquid "Water" (1 - fromIntegral d / 8))
+    ,( 9, \_    -> liquid "Water")
     ,(10, \_    -> block "Lava")
-    ,(11, \d    -> liquid "Lava" (1 - fromIntegral d / 8))
+    ,(11, \_    -> liquid "Lava")
     ,(12, \_    -> block "Sand")
     ,(13, \_    -> block "Gravel")
     ,(14, \_    -> block "Ore_Gold")
@@ -42,6 +42,7 @@ blockDefs = I.fromList
     ,(21, \_    -> block "Ore_Lapis")
     ,(22, \_    -> block "Lapis")
     ,(23, \d    -> blockFST "Dispenser_Front" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
+    ,(24, \_    -> blockSTB "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom")
     ,(25, \_    -> block "Jukebox_Side")
     ,(26, \d    -> bed (div d 8 == 1) (case mod d 4 of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
     ,(27, \d _  -> trackStraight d $ if div d 8 == 1 then "Rails_Powered_On" else "Rails_Powered_Off")
@@ -252,8 +253,26 @@ plant m = map ((,) m . (`rotateZ` sw)) [0..3] where
               [(0,0),(1,0),(1,1),(0,1)] (repeat (-sqrt 2 / 2,-sqrt 2 / 2,0))
     (cx, cy, d)  = ((-1-epsilon)/2, (-1-epsilon)/2, sqrt 2 / 4)
 
-liquid :: String -> Double -> Neighbors -> [(String, Face)]
-liquid m h ns = cull True ns $ box (uniform m) ((0,0,0),(1,1,h))
+liquid :: String -> Neighbors -> [(String, Face)]
+liquid m ns = cull True ns $
+    [(m, [(( 0, 0,0  ),(0,0),north), ((-1, 0,0  ),(1,0),north), ((-1, 0,hnw),(1,hnw),north), (( 0, 0,hne),(0,hne),north )])] ++
+    [(m, [(( 0,-1,0  ),(0,0),east ), (( 0, 0,0  ),(1,0),east ), (( 0, 0,hne),(1,hne),east ), (( 0,-1,hse),(0,hse),east  )])] ++
+    [(m, [((-1,-1,0  ),(0,0),south), (( 0,-1,0  ),(1,0),south), (( 0,-1,hse),(1,hse),south), ((-1,-1,hsw),(0,hsw),south )])] ++
+    [(m, [((-1, 0,0  ),(0,0),west ), ((-1,-1,0  ),(1,0),west ), ((-1,-1,hsw),(1,hsw),west ), ((-1, 0,hnw),(0,hnw),west  )])] ++
+    [(m, [((-1, 0,hnw),(0,0),top  ), ((-1,-1,hsw),(1,0),top  ), (( 0,-1,hse),(1,1  ),top  ), (( 0, 0,hne),(0,1  ),top   )])] ++
+    faceBottom (0,0) (1,1) 0 m
+    where blockID = fst $ ns (0,0,0)
+          height dir = let (i,v) = ns dir in if i == blockID-1 then 1 else
+                                             if i == blockID then if div v 8 == 1 then 1 else 1 - (fromIntegral (mod v 8) / 8)
+                                                             else 0
+          (h,n,e,s,w,ne,nw,sw,se) = (height (0,0,0), height neighborNorth, height neighborEast
+                                    ,height neighborSouth, height neighborWest, height (-1,0,-1)
+                                    ,height (-1,0,1), height (1,0,1), height (1,0,-1))
+          hsw = if sameLiquid neighborTop then 1 else if sameLiquid neighborSouth || sameLiquid neighborWest then max s w else h
+          hse = if sameLiquid neighborTop then 1 else if sameLiquid neighborSouth || sameLiquid neighborEast then max s e else h
+          hne = if sameLiquid neighborTop then 1 else if sameLiquid neighborNorth || sameLiquid neighborEast then max n e else h
+          hnw = if sameLiquid neighborTop then 1 else if sameLiquid neighborNorth || sameLiquid neighborWest then max n w else h
+          sameLiquid dir = elem (fst $ ns dir) [blockID,blockID-1]
 
 sides :: String -> Double -> [(String, Face)]
 sides m o = [faceNorth, faceEast, faceSouth, faceWest] >>= \f -> f (0,0) (1,1) o m

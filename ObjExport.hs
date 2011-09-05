@@ -65,7 +65,8 @@ chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
 
 chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> (Int, Int) -> IO BC.ByteString
 chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) (ci,cs) = do
-    let blockLookup (x,y,z) = if y < yFrom options || y > yTo options then (if showBottom options then (0,0) else (1,0)) else
+    let blockLookup (x,y,z) = if y > 127 then (0,0) else
+                              if y < yFrom options || y > yTo options then (if showBottom options then (0,0) else (1,0)) else
             let i = y + mod z chunkW * chunkH + mod x chunkW * chunkW * chunkH
             in  maybe (if showSides options then (0,0) else (1,0))
                       ((fromIntegral . flip B.index i) ***

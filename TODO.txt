@@ -1,4 +1,5 @@
-fix water/lava flows
+fix water/lava
+fix redstone
 
 parallelize program by parMapping chunkGeom over chunks
     (using dph-base or repa) and B.concatting at the end

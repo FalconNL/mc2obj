@@ -51,7 +51,7 @@ compound = byte >>= \tagType -> if tagType == 0 then return [] else
 
 chunk :: Integral a => a -> Get B.ByteString
 chunk len = int *> byte *> (B.concat . BL.toChunks . decompress . BL.fromChunks . return <$>
-                                (getByteString . fromIntegral $ len * 4096 - 5))
+                            (getByteString . fromIntegral $ len * 4096 - 5))
 
 loadRegion :: FilePath -> IO (I.IntMap Tag)
 loadRegion file = doesFileExist file >>=

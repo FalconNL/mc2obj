@@ -1,4 +1,4 @@
-mc2obj v0.3
+mc2obj v0.4
 ===========
 
 mc2obj is a tool to convert part of a Minecraft world to a .obj file, which
@@ -42,17 +42,22 @@ file in the output folder. For 3ds max, use the following settings:
 FAQ
 ---
 
-__I'm running something other than 64-bit Windows. How do I use your program?__  
+__I'm running Linux/OS X/something other than Windows. How do I use your program?__  
 Since Haskell code only runs on the platform you created the binary on I need
-to set up some virtual machines to do this. In the meantime, you can install the
-[Haskell platform](http://hackage.haskell.org/platform) and build the code
-yourself. For now you'll need to install the dependencies manually. I'll put the
-next version on Hackage to automate this.
+to set up some virtual machines to do this. In the meantime, you can compile the
+source yourself. See the 'How to compile' section below.
 
 __How do I run this program/what do I do with these .hs files?__  
 If you just want to run the program, make sure you're getting the binary release
-(click the big Downloads button in the top right of the Github page) isntead of
+(click the big Downloads button in the top right of the Github page) instead of
 the source code.
+
+__The exporter crashes with the message 'mc2obj: Codec.Compression.Zlib: incorrect header check'__  
+The world was probably run through a tool like MC MapDeleter, which deletes chunks
+to reduce file size. Apparently this can cause the resulting world files to no longer
+conform to (my understanding of) the file format specs. You can solve this by going
+ingame, waiting until all the chunks in the region you want to export are generated
+and exporting again.
 
 __I've found a bug__  
 Please check the Known Bugs section below to see if it's in there.
@@ -118,9 +123,9 @@ Major:
 * Performance still leaves a lot to be desired. For those interested: according to the
   profiler the two slowest functions are indexString and addFace in ObjExport.hs.
   Suggestions for performance improvement are welcome.
-* Water and lava flows are stepped rather than sloped and have no side faces.
-  Code change required.
-* Redstone wire does not display correctly. Code change required.
+* Water and lava do not display correctly. If anyony can work out how to correctly
+  calculate the heights of each of the four corners, please let me know.
+* Redstone wire does not display correctly.
 
 Minor:
 
@@ -129,3 +134,19 @@ Minor:
 * Fence texture coordinates aren't entirely correct
 * Some minor player interaction-related geometry effects like pressed pressure
   plates and lit up redstone ore are ignored
+
+How to compile
+--------------
+Install the latest version of the [Haskell platform](http://hackage.haskell.org/platform).
+On the command line, execute following commands:
+
+    cabal update
+    cabal install binary-strict
+    cabal install cmdargs
+    cabal install utility-ht
+
+Go to the mc2obj folder. Execute the following command:
+
+    ghc mc2obj.hs --make -outputdir=bin -O2 -Wall -fno-warn-missing-signatures -fno-warn-type-defaults
+
+If I haven't forgotten anything you should now be able to run the program. If not, please let me know.
