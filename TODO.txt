@@ -1,5 +1,12 @@
-fix water/lava
+fix blank lines in obj file
+water: cull ice-adjacent faces
+
 fix redstone
+
+Allow exporting entire map
+
+Add exportregion to filename, e.g. reddit.r_-30_10_20_15.obj
+look into resulting .obj file name on linux
 
 parallelize program by parMapping chunkGeom over chunks
     (using dph-base or repa) and B.concatting at the end

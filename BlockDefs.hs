@@ -14,8 +14,8 @@ blockDefs :: I.IntMap (Int -> Neighbors -> [(String, Face)])
 blockDefs = I.fromList
     [( 0, \_ _  -> [])
     ,( 1, \_    -> block "Stone")
-    ,( 2, \_ ns -> case (fst $ ns neighborTop) of 78 -> blockSTB "Dirt_Snow" "Snow" "Dirt" ns 
-                                                  _  -> blockSTB "Dirt_Grass" "Grass_Top" "Dirt" ns)
+    ,( 2, \_ ns -> case fst $ ns neighborTop of 78 -> blockSTB "Dirt_Snow" "Snow" "Dirt" ns 
+                                                _  -> blockSTB "Dirt_Grass" "Grass_Top" "Dirt" ns)
     ,( 3, \_    -> block "Dirt")
     ,( 4, \_    -> block "Cobblestone")
     ,( 5, \_    -> block "Wood")
@@ -262,17 +262,19 @@ liquid m ns = cull True ns $
     [(m, [((-1, 0,hnw),(0,0),top  ), ((-1,-1,hsw),(1,0),top  ), (( 0,-1,hse),(1,1  ),top  ), (( 0, 0,hne),(0,1  ),top   )])] ++
     faceBottom (0,0) (1,1) 0 m
     where blockID = fst $ ns (0,0,0)
-          height dir = let (i,v) = ns dir in if i == blockID-1 then 1 else
-                                             if i == blockID then if div v 8 == 1 then 1 else 1 - (fromIntegral (mod v 8) / 8)
-                                                             else 0
-          (h,n,e,s,w,ne,nw,sw,se) = (height (0,0,0), height neighborNorth, height neighborEast
-                                    ,height neighborSouth, height neighborWest, height (-1,0,-1)
-                                    ,height (-1,0,1), height (1,0,1), height (1,0,-1))
-          hsw = if sameLiquid neighborTop then 1 else if sameLiquid neighborSouth || sameLiquid neighborWest then max s w else h
-          hse = if sameLiquid neighborTop then 1 else if sameLiquid neighborSouth || sameLiquid neighborEast then max s e else h
-          hne = if sameLiquid neighborTop then 1 else if sameLiquid neighborNorth || sameLiquid neighborEast then max n e else h
-          hnw = if sameLiquid neighborTop then 1 else if sameLiquid neighborNorth || sameLiquid neighborWest then max n w else h
-          sameLiquid dir = elem (fst $ ns dir) [blockID,blockID-1]
+          isSameLiquid dir = elem (fst $ ns dir) [blockID,blockID-1]
+          hne = height (0,0,0)
+          hnw = height neighborWest
+          hsw = height (1,0,1)
+          hse = height neighborSouth
+          t = fst $ ns (0,0,0)
+          height (dx,dy,dz) = let neighbors = [(dx,dy,dz),(dx-1,dy,dz),(dx,dy,dz-1),(dx-1,dy,dz-1)]
+                              in  if any (\(x,y,z) -> isSameLiquid (x,y+1,z)) neighbors then 1 else 
+                                  uncurry (\f l -> 1 - f/l) $ foldl (\(f,l) (nt,nd) ->
+                                      if nt == t then let mult = if nd >= 8 || nd == 0 then 11 else 1
+                                                          percentAir = (fromIntegral (if nd >= 8 then 0 else nd) + 1) / 9
+                                                      in (f + mult * percentAir, l + mult)
+                                                 else if IS.notMember nt solidIDs then (f+1,l+1) else (f,l)) (0,0) $ map ns neighbors
 
 sides :: String -> Double -> [(String, Face)]
 sides m o = [faceNorth, faceEast, faceSouth, faceWest] >>= \f -> f (0,0) (1,1) o m

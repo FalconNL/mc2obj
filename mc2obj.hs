@@ -6,6 +6,7 @@ import System.Console.CmdArgs.Implicit
 import System.Directory
 import System.FilePath
 import System.IO
+import Text.Printf
 import BlockDefs
 import ObjExport
 
@@ -45,12 +46,15 @@ main = do arguments <- E.onException (cmdArgs mc2obj) (hFlush stderr >> putStrLn
           copyFile "mtl/minecraft.mtl" (objFolder arguments </> "minecraft.mtl")
           mapM_ (\x -> copyFile x $ objFolder arguments </> "tex" </> takeFileName x) =<<
               filterM doesFileExist . map (texFolder </>) =<< getDirectoryContents "texsplit/tex"
+          let suffix = case (rect arguments, circle arguments) of
+                            (Just (x1,z1,x2,z2),_) -> printf ".r%d_%d_%d_%d" x1 z1 x2 z2
+                            (_,Just (cx,cz,r))     -> printf ".c%d_%d_%d" cx cz r
+                            _                      -> ""
           case chunks of
                [] -> putStrLn "Error: no region specified or incorrect region"
-               cs -> do putStrLn "Compiling block data..."
-                        export ExportOptions { showBottom = bottom arguments
-                                             , showSides  = sides arguments
-                                             , yFrom = minY arguments, yTo = maxY arguments }
-                               blockDefs
-                               (worldFolder arguments </> if nether arguments then "DIM-1/region" else "region")
-                               (objFolder arguments </> worldName <.> "obj") cs
+               cs -> export ExportOptions { showBottom = bottom arguments
+                                          , showSides  = sides arguments
+                                          , yFrom = minY arguments, yTo = maxY arguments }
+                            blockDefs
+                            (worldFolder arguments </> if nether arguments then "DIM-1/region" else "region")
+                            (objFolder arguments </> worldName ++ suffix <.> "obj") cs

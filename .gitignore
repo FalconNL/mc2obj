@@ -7,4 +7,5 @@
 *.max
 *.zip
 bin/*
+decompile/*
 mc2obj test/*

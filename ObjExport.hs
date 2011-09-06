@@ -110,4 +110,4 @@ addFace ((!vs, !ts, !ns), !gs) = second
             (tm',ti) = getIndex t tm
             (nm',ni) = getIndex n nm
         in  ((vm', tm', nm'), BC.intercalate "/" (map (BC.pack . show) [-vi,-ti,-ni]) : is)) ((vs, ts, ns), []) where
-    getIndex x xm = maybe (M.insert x (M.size xm + 1) xm, M.size xm + 1) ((,) xm) $ M.lookup x xm
+    getIndex x xm = maybe (M.insertWith' const x (M.size xm + 1) xm, M.size xm + 1) ((,) xm) $ M.lookup x xm
