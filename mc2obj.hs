@@ -43,7 +43,7 @@ main = do arguments <- E.onException (cmdArgs mc2obj) (hFlush stderr >> putStrLn
           let texFolder = "texsplit/tex"
           createDirectoryIfMissing True $ objFolder arguments
           createDirectoryIfMissing True $ objFolder arguments </> "tex"
-          copyFile "mtl/minecraft.mtl" (objFolder arguments </> "minecraft.mtl")
+          copyFile "material/minecraft.mtl" (objFolder arguments </> "minecraft.mtl")
           mapM_ (\x -> copyFile x $ objFolder arguments </> "tex" </> takeFileName x) =<<
               filterM doesFileExist . map (texFolder </>) =<< getDirectoryContents "texsplit/tex"
           let suffix = case (rect arguments, circle arguments) of
