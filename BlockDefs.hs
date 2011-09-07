@@ -100,7 +100,7 @@ blockDefs = I.fromList
     ,(56, \_    -> block "Ore_Diamond")
     ,(57, \_    -> block "Diamond")
     ,(58, \_    -> workbench "Workbench_Front" "Workbench_Side" "Workbench_Top" "Wood")
-    ,(59, \d _  -> sides ("Crops_" ++ show d) (1/4) ++ sides ("Crops_" ++ show d) (3/4))
+    ,(59, \d _  -> sides ("Crops_" ++ show (min 7 d)) (1/4) ++ sides ("Crops_" ++ show (min 7 d)) (3/4))
     ,(60, \d    -> blockSTB "Dirt" (if d == 0 then "Farmland_Dry" else "Farmland_Wet") "Dirt")
     ,(61, \d    -> blockFST "Furnace_Front" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
     ,(62, \d    -> blockFST "Furnace_Lit" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
@@ -160,7 +160,8 @@ cull self ns = filter (\(_,vs) -> not $
           c = fst $ ns (0,0,0)
 
 hide :: Bool -> Int -> Int -> Bool
-hide self c t = (self && c == t) || IS.member (fromIntegral t) solidIDs
+hide _    9 79 = True --ice hides water faces
+hide self c t  = (self && c == t) || IS.member (fromIntegral t) solidIDs
 
 solidIDs :: IS.IntSet
 solidIDs = IS.fromAscList $ [1..5] ++ [7] ++ [12..17] ++ [19] ++ [21..25] ++

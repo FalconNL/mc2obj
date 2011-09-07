@@ -224,7 +224,7 @@ newmtl Wool_Magenta
 Kd 0.7490 0.2980 0.7882
 map_Kd tex/wool_magenta.png
 
-newmtl Wool_Light Blue
+newmtl Wool_Light_Blue
 Kd 0.4078 0.5451 0.8314
 map_Kd tex/wool_light_blue.png
 
@@ -244,7 +244,7 @@ newmtl Wool_Gray
 Kd 0.2627 0.2627 0.2627
 map_Kd tex/wool_gray.png
 
-newmtl Wool_Light Gray
+newmtl Wool_Light_Gray
 Kd 0.6196 0.6510 0.6510
 map_Kd tex/wool_light_gray.png
 

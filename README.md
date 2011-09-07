@@ -34,6 +34,12 @@ of the Nether:
 This will export the rectangle from (-3,-3) to (3,3) of the nether (-n) with sides (-s)
 and top and bottom (-b) enabled.
 
+You can also just export the entire world. Note that depending on the size of your world
+this may take a long time and result in a very large .onj file. I would recommend using
+--miny to keep the filesize down.
+
+    mc2obj "%appdata%\.minecraft\saves\world" -o "e:\output" -e --miny=63
+
 After exporting, start 3ds max or whatever other 3D package you have and import the .obj
 file in the output folder. For 3ds max, use the following settings:
 
