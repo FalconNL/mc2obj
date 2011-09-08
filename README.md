@@ -149,6 +149,7 @@ On the command line, execute following commands:
     cabal update
     cabal install binary-strict
     cabal install cmdargs
+    cabal install split
     cabal install utility-ht
 
 Go to the mc2obj folder. Execute the following command:
