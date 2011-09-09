@@ -1,4 +1,4 @@
-mc2obj v0.4
+mc2obj v0.5
 ===========
 
 mc2obj is a tool to convert part of a Minecraft world to a .obj file, which
@@ -48,10 +48,15 @@ file in the output folder. For 3ds max, use the following settings:
 FAQ
 ---
 
-__I'm running Linux/OS X/something other than Windows. How do I use your program?__  
-Since Haskell code only runs on the platform you created the binary on I need
-to set up some virtual machines to do this. In the meantime, you can compile the
-source yourself. See the 'How to compile' section below.
+__I'm running Linux and your program doesn't work__  
+I have only tested the release on Ubuntu 10.04 and Ubuntu 11.10, but hopefully it should run
+on other distributions as well (I'm new at compiling for Linux). Make sure you're using the
+correct version (x86 for 32-bit machines, x64 for 64-bit machines). If it doesn't work,
+please let me know.
+
+__Is there an OS X version?__  
+Not yet. I'm still trying to get OS X working in a virtual machine so I can create a binary.
+In the meantime, you can compile the source yourself. See the 'How to compile' section below. 
 
 __How do I run this program/what do I do with these .hs files?__  
 If you just want to run the program, make sure you're getting the binary release
@@ -113,14 +118,10 @@ Again, seek the help of someone with more experience with your 3D package/render
 __How do I use a custom texture pack?__  
 Make sure you have [ImageMagick](http://www.imagemagick.org/script/binary-releases.php)
 installed. Put the required texture files (terrain.png, fire.png, portal.png and sign.png)
-in the texsplit folder. Run texsplit.bat. The next time you export a world it will
-use the new texture pack. Alternatively, replace the tex folder in your output directory
-with the one in the texplit folder to avoid having to recompile.
-
-__Texsplit doesn't work on Linux/Mac__  
-Again, I've yet to set up the virtual machines so for the time being you'll have to
-transform texplit.bat into the appropriate format yourself. This shouldn't be too
-difficult though.
+in the texsplit folder. Run texsplit.bat (Windows) or texplsit.sh (Linux). The next time
+you export a world it will use the new texture pack. Alternatively, replace the tex folder
+in your output directory with the one in the texsplit folder and your 3D package should
+update the textures immediately.
 
 Known bugs
 ----------
@@ -129,8 +130,6 @@ Major:
 * Performance still leaves a lot to be desired. For those interested: according to the
   profiler the two slowest functions are indexString and addFace in ObjExport.hs.
   Suggestions for performance improvement are welcome.
-* Water and lava do not display correctly. If anyony can work out how to correctly
-  calculate the heights of each of the four corners, please let me know.
 * Redstone wire does not display correctly.
 
 Minor:
@@ -144,7 +143,7 @@ Minor:
 How to compile
 --------------
 Install the latest version of the [Haskell platform](http://hackage.haskell.org/platform).
-On the command line, execute following commands:
+On the command line, execute the following commands:
 
     cabal update
     cabal install binary-strict
@@ -156,4 +155,4 @@ Go to the mc2obj folder. Execute the following command:
 
     ghc mc2obj.hs --make -outputdir=bin -O2 -Wall -fno-warn-missing-signatures -fno-warn-type-defaults
 
-If I haven't forgotten anything you should now be able to run the program. If not, please let me know.
+You should now be able to run the program. If not, please let me know.

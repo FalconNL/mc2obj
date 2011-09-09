@@ -8,4 +8,5 @@
 *.zip
 bin/*
 decompile/*
+releases/*
 mc2obj test/*
