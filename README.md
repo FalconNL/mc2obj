@@ -1,5 +1,5 @@
-mc2obj v0.5
-===========
+mc2obj v0.5.5
+=============
 
 mc2obj is a tool to convert part of a Minecraft world to a .obj file, which
 can be imported into a 3D package such as 3ds max or Blender to make a
@@ -131,6 +131,7 @@ Major:
   profiler the two slowest functions are indexString and addFace in ObjExport.hs.
   Suggestions for performance improvement are welcome.
 * Redstone wire does not display correctly.
+* Paintings are not exported
 
 Minor:
 

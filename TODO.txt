@@ -1,3 +1,5 @@
+try to duplicate copyFile bug on Debian64
+
 fix redstone
 
 parallelize program by parMapping chunkGeom over chunks

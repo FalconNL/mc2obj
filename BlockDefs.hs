@@ -86,7 +86,7 @@ blockDefs = I.fromList
                              2 -> slab "Wood" "Wood" "Wood"
                              3 -> slab "Cobblestone" "Cobblestone" "Cobblestone"
                              _ -> slab "Slab_Side" "Slab_Top" "Slab_Top")
-    ,(45, \_    -> block "Moss_Stone")
+    ,(45, \_    -> block "Brick")
     ,(46, \_    -> blockSTB "TNT_Side" "TNT_Top" "TNT_Bottom")
     ,(47, \_    -> blockSTB "Bookshelf" "Wood" "Wood")
     ,(48, \_    -> block "Moss_Stone")
