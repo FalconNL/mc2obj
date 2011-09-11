@@ -185,8 +185,8 @@ convert terrain.png -crop ${w}x${w}+${ob}+${o6} 'png24:tex/piston.png'
 convert terrain.png -crop ${w}x${w}+${oc}+${o6} 'png24:tex/piston_side.png'
 convert terrain.png -crop ${w}x${w}+${od}+${o6} 'png24:tex/piston_bottom.png'
 convert terrain.png -crop ${w}x${w}+${oe}+${o6} 'png24:tex/piston_top.png'
-convert terrain.png -crop ${w}x${w}+${of}+${o6} 'png24:tex/stalk.png'
-convert terrain.png -crop ${w}x${w}+${of}+${o6} -channel A -negate -separate 'png32:tex/stalk_alpha.png'
+convert terrain.png -crop ${w}x${w}+${of}+${o6} -fill 'hsl(34%,51%,35%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/stalk_pumpkin.png'
+convert terrain.png -crop ${w}x${w}+${of}+${o6} -channel A -negate -separate 'png32:tex/stalk_pumpkin_alpha.png'
 
 
 echo Converting row 8...
@@ -212,8 +212,8 @@ convert terrain.png -crop ${w}x${w}+${oc}+${o7} 'png24:tex/cake_bottom.png'
 convert terrain.png -crop ${w}x${w}+${oc}+${o7} -channel A -negate -separate 'png32:tex/cake_bottom_alpha.png'
 convert terrain.png -crop ${w}x${w}+${od}+${o7} 'png24:tex/mushroom_cap_red.png'
 convert terrain.png -crop ${w}x${w}+${oe}+${o7} 'png24:tex/mushroom_cap_brown.png'
-convert terrain.png -crop ${w}x${w}+${of}+${o7} 'png24:tex/stalk_bend.png'
-convert terrain.png -crop ${w}x${w}+${of}+${o7} -channel A -negate -separate 'png32:tex/stalk_bend_alpha.png'
+convert terrain.png -crop ${w}x${w}+${of}+${o7} -fill 'hsl(34%,51%,35%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/stalk_melon.png'
+convert terrain.png -crop ${w}x${w}+${of}+${o7} -channel A -negate -separate 'png32:tex/stalk_melon_alpha.png'
 
 echo Converting row 9...
 
@@ -232,9 +232,9 @@ convert terrain.png -crop ${w}x${w}+${o9}+${o8} 'png24:tex/melon_top.png'
 #
 #
 #
-convert terrain.png -crop ${w}x${w}+${od}+${o8} 'png24:tex/mushroom_stalk_red.png'
-convert terrain.png -crop ${w}x${w}+${oe}+${o8} 'png24:tex/mushroom_stalk_brown.png'
-convert terrain.png -crop ${w}x${w}+${of}+${o8} 'png24:tex/vines.png'
+convert terrain.png -crop ${w}x${w}+${od}+${o8} 'png24:tex/mushroom_stalk_side.png'
+convert terrain.png -crop ${w}x${w}+${oe}+${o8} 'png24:tex/mushroom_stalk_top.png'
+convert terrain.png -crop ${w}x${w}+${of}+${o8} -fill 'hsl(34%,51%,35%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/vines.png'
 convert terrain.png -crop ${w}x${w}+${of}+${o8} -channel A -negate -separate 'png32:tex/vines_alpha.png'
 
 echo Converting row 10...

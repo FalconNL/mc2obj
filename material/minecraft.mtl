@@ -645,6 +645,67 @@ Kd 0.6157 0.5020 0.3098
 map_Kd tex/hatch.png
 map_d tex/hatch_alpha.png
 
+newmtl Stone_Brick
+Kd 0.4902 0.4902 0.4902
+map_Kd tex/stone_brick.png
+
+newmtl Stone_Brick_Cracked
+Kd 0.4902 0.4902 0.4902
+map_Kd tex/stone_brick_cracked.png
+
+newmtl Stone_Brick_Moss
+Kd 0.4902 0.4902 0.4902
+map_Kd tex/stone_brick_moss.png
+
+newmtl Mushroom_Cap_Brown
+Kd 0.4000 0.3176 0.1961
+map_Kd tex/mushroom_cap_brown.png
+
+newmtl Mushroom_Cap_Red
+Kd 0.8867 0.2031 0.2031
+map_Kd tex/mushroom_cap_red.png
+
+newmtl Mushroom_Stalk_Side
+Kd 0.9375 0.8789 0.84375
+map_Kd tex/mushroom_stalk_side.png
+
+newmtl Mushroom_Stalk_Top
+Kd 0.9490 0.7960 0.5804
+map_Kd tex/mushroom_stalk_top.png
+
+newmtl Iron_Bars
+Kd 0.7686 0.7686 0.7686
+map_Kd tex/iron_bars.png
+map_d tex/iron_bars_alpha.png
+
+newmtl Glass_Pane_Top
+Kd 1.0000 1.0000 1.0000
+map_Kd tex/glass_pane_top.png
+map_d tex/glass_pane_top_alpha.png
+
+newmtl Melon_Side
+Kd 0.6157 0.7294 0.2980
+map_Kd tex/melon_side.png
+
+newmtl Melon_Top
+Kd 0.6157 0.7294 0.2980
+map_Kd tex/melon_top.png
+
+newmtl Stalk_Pumpkin
+Kd 0.1647 0.2627 0.1647
+map_Kd tex/stalk_pumpkin.png
+map_d tex/stalk_pumpkin_alpha.png
+
+newmtl Stalk_Melon
+Kd 0.1647 0.2627 0.1647
+map_Kd tex/stalk_melon.png
+map_d tex/stalk_melon_alpha.png
+
+newmtl Vines
+Kd 0.2902 0.5216 0.2353
+map_Kd tex/vines.png
+map_d tex/vines_alpha.png
+
 newmtl Unknown
 Kd 1.000 0.0000 1.0000
 map_Kd tex/unknown.png

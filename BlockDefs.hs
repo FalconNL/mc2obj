@@ -12,135 +12,157 @@ type Materials = (String, String, String, String, String, String)
 
 blockDefs :: I.IntMap (Int -> Neighbors -> [(String, Face)])
 blockDefs = I.fromList
-    [( 0, \_ _  -> [])
-    ,( 1, \_    -> block "Stone")
-    ,( 2, \_ ns -> case fst $ ns neighborTop of 78 -> blockSTB "Dirt_Snow" "Snow" "Dirt" ns 
-                                                _  -> blockSTB "Dirt_Grass" "Grass_Top" "Dirt" ns)
-    ,( 3, \_    -> block "Dirt")
-    ,( 4, \_    -> block "Cobblestone")
-    ,( 5, \_    -> block "Wood")
-    ,( 6, \d _  -> plant $ case d of 1 -> "Sapling_Pine"
-                                     2 -> "Sapling_Birch"
-                                     _ -> "Sapling_Oak")
-    ,( 7, \_    -> block "Bedrock")
-    ,( 8, \_    -> block "Water")
-    ,( 9, \_    -> liquid "Water")
-    ,(10, \_    -> block "Lava")
-    ,(11, \_    -> liquid "Lava")
-    ,(12, \_    -> block "Sand")
-    ,(13, \_    -> block "Gravel")
-    ,(14, \_    -> block "Ore_Gold")
-    ,(15, \_    -> block "Ore_Iron")
-    ,(16, \_    -> block "Ore_Coal")
-    ,(17, \d    -> blockSTB (case d of 1 -> "Log_Pine"
-                                       2 -> "Log_Birch"
-                                       _ -> "Log_Oak") "Log_Top" "Log_Top")
-    ,(18, \d    -> leaf (case mod d 4 of 1 -> "Leaves_Pine"
-                                         _ -> "Leaves_Oak"))
-    ,(19, \_    -> block "Sponge")
-    ,(20, \_    -> block "Glass")
-    ,(21, \_    -> block "Ore_Lapis")
-    ,(22, \_    -> block "Lapis")
-    ,(23, \d    -> blockFST "Dispenser_Front" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
-    ,(24, \_    -> blockSTB "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom")
-    ,(25, \_    -> block "Jukebox_Side")
-    ,(26, \d    -> bed (div d 8 == 1) (case mod d 4 of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
-    ,(27, \d _  -> trackStraight d $ if div d 8 == 1 then "Rails_Powered_On" else "Rails_Powered_Off")
-    ,(28, \d _  -> trackStraight d "Rails_Detector")
-    ,(29, \d    -> piston d "Piston_Sticky")
-    ,(30, \_ _  -> plant "Cobweb")
-    ,(31, \d _  -> plant $ case d of 1 -> "Tall_Grass"
-                                     2 -> "Fern"
-                                     _ -> "Dead_Shrub")
-    ,(32, \_ _  -> plant "Dead_Shrub")
-    ,(33, \d    -> piston d "Piston")
-    ,(34, \d    -> pistonExtension d)
-    ,(35, \d    -> block $ "Wool_" ++ (case d of 1  -> "Orange"
-                                                 2  -> "Magenta"
-                                                 3  -> "Light_Blue"
-                                                 4  -> "Yellow"
-                                                 5  -> "Lime"
-                                                 6  -> "Pink"
-                                                 7  -> "Gray"
-                                                 8  -> "Light_Gray"
-                                                 9  -> "Cyan"
-                                                 10 -> "Purple"
-                                                 11 -> "Blue"
-                                                 12 -> "Brown"
-                                                 13 -> "Green"
-                                                 14 -> "Red"
-                                                 15 -> "Black"
-                                                 _  -> "White"))
-    ,(36, \_ _  -> [])
-    ,(37, \_ _  -> plant "Flower_Yellow")
-    ,(38, \_ _  -> plant "Flower_Red")
-    ,(39, \_ _  -> plant "Mushroom_Brown")
-    ,(40, \_ _  -> plant "Mushroom_Red")
-    ,(41, \_    -> block "Gold")
-    ,(42, \_    -> block "Iron")
-    ,(43, \d    -> case d of 1 -> blockSTB "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom"
-                             2 -> block "Wood"
-                             3 -> block "Cobblestone"
-                             _ -> blockSTB "Slab_Side" "Slab_Top" "Slab_Top")
-    ,(44, \d    -> case d of 1 -> slab "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom"
-                             2 -> slab "Wood" "Wood" "Wood"
-                             3 -> slab "Cobblestone" "Cobblestone" "Cobblestone"
-                             _ -> slab "Slab_Side" "Slab_Top" "Slab_Top")
-    ,(45, \_    -> block "Brick")
-    ,(46, \_    -> blockSTB "TNT_Side" "TNT_Top" "TNT_Bottom")
-    ,(47, \_    -> blockSTB "Bookshelf" "Wood" "Wood")
-    ,(48, \_    -> block "Moss_Stone")
-    ,(49, \_    -> block "Obsidian")
-    ,(50, \d _  -> torch d "Torch")
-    ,(51, \_ _  -> sides "Fire" 0 ++ sides "Fire" 1)
-    ,(52, \_    -> block "Spawner")
-    ,(53, \d    -> stairs "Wood" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
-    ,(54, \_    -> chest)
-    ,(55, \_    -> redstone "Redstone" "Redstone_Cross")
-    ,(56, \_    -> block "Ore_Diamond")
-    ,(57, \_    -> block "Diamond")
-    ,(58, \_    -> workbench "Workbench_Front" "Workbench_Side" "Workbench_Top" "Wood")
-    ,(59, \d _  -> sides ("Crops_" ++ show (min 7 d)) (1/4) ++ sides ("Crops_" ++ show (min 7 d)) (3/4))
-    ,(60, \d    -> blockSTB "Dirt" (if d == 0 then "Farmland_Dry" else "Farmland_Wet") "Dirt")
-    ,(61, \d    -> blockFST "Furnace_Front" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
-    ,(62, \d    -> blockFST "Furnace_Lit" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
-    ,(63, \d    -> sign d "Sign")
-    ,(64, \d    -> door "Door_Wood_Top" "Door_Wood_Bottom" d)
-    ,(65, \d _  -> map (second . rotateZ $ case d of 2 -> 1; 3 -> 3; 4 -> 0; _ -> 2) $
-                       faceNorth (0,0) (1,1) (1 - epsilon) "Ladder")
-    ,(66, \d _  -> track d "Rails" "Rails_Bend")
-    ,(67, \d    -> stairs "Cobblestone" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
-    ,(68, \d    -> wallSign d "Sign")
-    ,(69, \d    -> lever d)
-    ,(70, \_    -> pressurePlate "Stone")
-    ,(71, \d    -> door "Door_Iron_Top" "Door_Iron_Bottom" d)
-    ,(72, \_    -> pressurePlate "Wood")
-    ,(73, \_    -> block "Ore_Redstone")
-    ,(74, \_    -> block "Ore_Redstone")
-    ,(75, \d _  -> torch d "Redstone_Torch_Off")
-    ,(76, \d _  -> torch d "Redstone_Torch_On")
-    ,(77, \d    -> button $ case d of 1 -> 0; 2 -> 2; 3 -> 1; _ -> 3)
-    ,(78, \_    -> snow "Snow")
-    ,(79, \_    -> block "Ice")
-    ,(80, \_    -> block "Snow")
-    ,(81, \_ ns -> sides "Cactus_Side" (1/16) ++ cull True ns
-                       (faceTop (0,0) (1,1) 0 "Cactus_Top" ++
-                        faceBottom (0,0) (1,1) 0 "Cactus_Bottom"))
-    ,(82, \_    -> block "Clay")
-    ,(83, \_ _  -> plant "Sugar_Cane")
-    ,(84, \_    -> blockSTB "Jukebox_Side" "Jukebox_Top" "Jukebox_Side")
-    ,(85, \_    -> fence)
-    ,(86, \d    -> blockFST "Pumpkin_Front" "Pumpkin_Side" "Pumpkin_Top" (case d of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
-    ,(87, \_    -> block "Netherrack")
-    ,(88, \_    -> block "Soul_Sand")
-    ,(89, \_    -> block "Glowstone")
-    ,(90, \_    -> portal)
-    ,(91, \d    -> blockFST "Pumpkin_Lit" "Pumpkin_Side" "Pumpkin_Top" (case d of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
-    ,(92, \d    -> cake d)
-    ,(93, \d    -> repeater d "Repeater_Off" "Redstone_Torch_Off")
-    ,(94, \d    -> repeater d "Repeater_On" "Redstone_Torch_On")
-    ,(95, \_    -> chest)
-    ,(96, \d    -> hatch d)
+    [(  0, \_ _  -> [])
+    ,(  1, \_    -> block "Stone")
+    ,(  2, \_ ns -> case fst $ ns neighborTop of 78 -> blockSTB "Dirt_Snow" "Snow" "Dirt" ns 
+                                                 _  -> blockSTB "Dirt_Grass" "Grass_Top" "Dirt" ns)
+    ,(  3, \_    -> block "Dirt")
+    ,(  4, \_    -> block "Cobblestone")
+    ,(  5, \_    -> block "Wood")
+    ,(  6, \d _  -> plant $ case d of 1 -> "Sapling_Pine"
+                                      2 -> "Sapling_Birch"
+                                      _ -> "Sapling_Oak")
+    ,(  7, \_    -> block "Bedrock")
+    ,(  8, \_    -> block "Water")
+    ,(  9, \_    -> liquid "Water")
+    ,( 10, \_    -> block "Lava")
+    ,( 11, \_    -> liquid "Lava")
+    ,( 12, \_    -> block "Sand")
+    ,( 13, \_    -> block "Gravel")
+    ,( 14, \_    -> block "Ore_Gold")
+    ,( 15, \_    -> block "Ore_Iron")
+    ,( 16, \_    -> block "Ore_Coal")
+    ,( 17, \d    -> blockSTB (case d of 1 -> "Log_Pine"
+                                        2 -> "Log_Birch"
+                                        _ -> "Log_Oak") "Log_Top" "Log_Top")
+    ,( 18, \d    -> leaf (case mod d 4 of 1 -> "Leaves_Pine"
+                                          _ -> "Leaves_Oak"))
+    ,( 19, \_    -> block "Sponge")
+    ,( 20, \_    -> block "Glass")
+    ,( 21, \_    -> block "Ore_Lapis")
+    ,( 22, \_    -> block "Lapis")
+    ,( 23, \d    -> blockFST "Dispenser_Front" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
+    ,( 24, \_    -> blockSTB "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom")
+    ,( 25, \_    -> block "Jukebox_Side")
+    ,( 26, \d    -> bed (div d 8 == 1) (case mod d 4 of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
+    ,( 27, \d _  -> trackStraight d $ if div d 8 == 1 then "Rails_Powered_On" else "Rails_Powered_Off")
+    ,( 28, \d _  -> trackStraight d "Rails_Detector")
+    ,( 29, \d    -> piston d "Piston_Sticky")
+    ,( 30, \_ _  -> plant "Cobweb")
+    ,( 31, \d _  -> plant $ case d of 1 -> "Tall_Grass"
+                                      2 -> "Fern"
+                                      _ -> "Dead_Shrub")
+    ,( 32, \_ _  -> plant "Dead_Shrub")
+    ,( 33, \d    -> piston d "Piston")
+    ,( 34, \d    -> pistonExtension d)
+    ,( 35, \d    -> block $ "Wool_" ++ (case d of 1  -> "Orange"
+                                                  2  -> "Magenta"
+                                                  3  -> "Light_Blue"
+                                                  4  -> "Yellow"
+                                                  5  -> "Lime"
+                                                  6  -> "Pink"
+                                                  7  -> "Gray"
+                                                  8  -> "Light_Gray"
+                                                  9  -> "Cyan"
+                                                  10 -> "Purple"
+                                                  11 -> "Blue"
+                                                  12 -> "Brown"
+                                                  13 -> "Green"
+                                                  14 -> "Red"
+                                                  15 -> "Black"
+                                                  _  -> "White"))
+    ,( 36, \_ _  -> [])
+    ,( 37, \_ _  -> plant "Flower_Yellow")
+    ,( 38, \_ _  -> plant "Flower_Red")
+    ,( 39, \_ _  -> plant "Mushroom_Brown")
+    ,( 40, \_ _  -> plant "Mushroom_Red")
+    ,( 41, \_    -> block "Gold")
+    ,( 42, \_    -> block "Iron")
+    ,( 43, \d    -> case d of 1 -> blockSTB "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom"
+                              2 -> block "Wood"
+                              3 -> block "Cobblestone"
+                              4 -> block "Brick"
+                              5 -> block "Stone_Brick"
+                              _ -> blockSTB "Slab_Side" "Slab_Top" "Slab_Top")
+    ,( 44, \d    -> case d of 1 -> slab "Sandstone_Side" "Sandstone_Top" "Sandstone_Bottom"
+                              2 -> slab "Wood" "Wood" "Wood"
+                              3 -> slab "Cobblestone" "Cobblestone" "Cobblestone"
+                              4 -> slab "Brick" "Brick" "Brick"
+                              5 -> slab "Stone_Brick" "Stone_Brick" "Stone_Brick"
+                              _ -> slab "Slab_Side" "Slab_Top" "Slab_Top")
+    ,( 45, \_    -> block "Brick")
+    ,( 46, \_    -> blockSTB "TNT_Side" "TNT_Top" "TNT_Bottom")
+    ,( 47, \_    -> blockSTB "Bookshelf" "Wood" "Wood")
+    ,( 48, \_    -> block "Moss_Stone")
+    ,( 49, \_    -> block "Obsidian")
+    ,( 50, \d _  -> torch d "Torch")
+    ,( 51, \_ _  -> sides "Fire" 0 ++ sides "Fire" 1)
+    ,( 52, \_    -> block "Spawner")
+    ,( 53, \d    -> stairs "Wood" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
+    ,( 54, \_    -> chest)
+    ,( 55, \_    -> redstone "Redstone" "Redstone_Cross")
+    ,( 56, \_    -> block "Ore_Diamond")
+    ,( 57, \_    -> block "Diamond")
+    ,( 58, \_    -> workbench "Workbench_Front" "Workbench_Side" "Workbench_Top" "Wood")
+    ,( 59, \d _  -> sides ("Crops_" ++ show (min 7 d)) (1/4) ++ sides ("Crops_" ++ show (min 7 d)) (3/4))
+    ,( 60, \d    -> blockSTB "Dirt" (if d == 0 then "Farmland_Dry" else "Farmland_Wet") "Dirt")
+    ,( 61, \d    -> blockFST "Furnace_Front" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
+    ,( 62, \d    -> blockFST "Furnace_Lit" "Furnace_Side" "Furnace_Top" (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0))
+    ,( 63, \d    -> sign d "Sign")
+    ,( 64, \d    -> door "Door_Wood_Top" "Door_Wood_Bottom" d)
+    ,( 65, \d _  -> map (second . rotateZ $ case d of 2 -> 1; 3 -> 3; 4 -> 0; _ -> 2) $
+                        faceNorth (0,0) (1,1) (1 - epsilon) "Ladder")
+    ,( 66, \d _  -> track d "Rails" "Rails_Bend")
+    ,( 67, \d    -> stairs "Cobblestone" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
+    ,( 68, \d    -> wallSign d "Sign")
+    ,( 69, \d    -> lever d)
+    ,( 70, \_    -> pressurePlate "Stone")
+    ,( 71, \d    -> door "Door_Iron_Top" "Door_Iron_Bottom" d)
+    ,( 72, \_    -> pressurePlate "Wood")
+    ,( 73, \_    -> block "Ore_Redstone")
+    ,( 74, \_    -> block "Ore_Redstone")
+    ,( 75, \d _  -> torch d "Redstone_Torch_Off")
+    ,( 76, \d _  -> torch d "Redstone_Torch_On")
+    ,( 77, \d    -> button $ case d of 1 -> 0; 2 -> 2; 3 -> 1; _ -> 3)
+    ,( 78, \_    -> snow "Snow")
+    ,( 79, \_    -> block "Ice")
+    ,( 80, \_    -> block "Snow")
+    ,( 81, \_ ns -> sides "Cactus_Side" (1/16) ++ cull True ns
+                        (faceTop (0,0) (1,1) 0 "Cactus_Top" ++
+                         faceBottom (0,0) (1,1) 0 "Cactus_Bottom"))
+    ,( 82, \_    -> block "Clay")
+    ,( 83, \_ _  -> plant "Sugar_Cane")
+    ,( 84, \_    -> blockSTB "Jukebox_Side" "Jukebox_Top" "Jukebox_Side")
+    ,( 85, \_    -> fence)
+    ,( 86, \d    -> blockFST "Pumpkin_Front" "Pumpkin_Side" "Pumpkin_Top" (case d of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
+    ,( 87, \_    -> block "Netherrack")
+    ,( 88, \_    -> block "Soul_Sand")
+    ,( 89, \_    -> block "Glowstone")
+    ,( 90, \_    -> portal)
+    ,( 91, \d    -> blockFST "Pumpkin_Lit" "Pumpkin_Side" "Pumpkin_Top" (case d of 0 -> 1; 1 -> 2; 2 -> 3; _ -> 0))
+    ,( 92, \d    -> cake d)
+    ,( 93, \d    -> repeater d "Repeater_Off" "Redstone_Torch_Off")
+    ,( 94, \d    -> repeater d "Repeater_On" "Redstone_Torch_On")
+    ,( 95, \_    -> chest)
+    ,( 96, \d    -> hatch d)
+    ,( 97, \_    -> block "Stone")
+    ,( 98, \d    -> block $ case d of 1 -> "Stone_Brick_Moss"; 2 -> "Stone_Brick_Cracked"; _ -> "Stone Brick")
+    ,( 99, \d    -> mushroom d "Mushroom_Cap_Brown")
+    ,(100, \d    -> mushroom d "Mushroom_Cap_Red")
+    ,(101, \_    -> block "Unknown")
+    ,(102, \_    -> block "Unknown")
+    ,(103, \_    -> blockSTB "Melon_Side" "Melon_Top" "Melon_Top")
+    ,(104, \d _  -> modifyVertices (\(x,y,z) -> (x,y,z - (7 - fromIntegral d) / 8 )) $ plant "Stalk_Pumpkin")
+    ,(105, \d _  -> modifyVertices (\(x,y,z) -> (x,y,z - (7 - fromIntegral d) / 8 )) $ plant "Stalk_Melon")
+    ,(106, \d ns -> let twoSided f g = f (0,0) (1,1) (epsilon) "Vines" ++ g (0,0) (1,1) (1 - epsilon) "Vines"
+                    in  (if div d         8 == 1 then twoSided faceSouth faceNorth else []) ++
+                        (if div (mod d 8) 4 == 1 then twoSided faceEast  faceWest  else []) ++
+                        (if div (mod d 4) 2 == 1 then twoSided faceNorth faceSouth else []) ++
+                        (if      mod d 2    == 1 then twoSided faceWest  faceEast  else []) ++
+                        (if IS.member (fst $ ns neighborTop) solidIDs then faceBottom (0,0) (1,1) (1 - epsilon) "Vines" else []))
+    ,(107, \_    -> block "Unknown")
+    ,(108, \d    -> stairs "Brick" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
+    ,(109, \d    -> stairs "Stone_Brick" (case d of 0 -> 1; 1 -> 3; 2 -> 2; _ -> 0))
     ]
 
 --Can only be used for non-rotated full blocks
@@ -416,13 +438,17 @@ chest ns = cull True ns $
           [n,e,s,w] = map (fst . ns) [neighborNorth, neighborEast, neighborSouth, neighborWest]
 
 door :: String -> String -> Int -> Neighbors -> [(String, Face)]
-door mt mb d ns = cull False ns . map (second $ rotateZ (3 * div (mod d 8) 4 + case mod d 4 of 0 -> 2; 1 -> 3; 2 -> 0; _ -> 1)) $
-    case div d 8 of 0 -> faceSouth (0,0) (1,1) 0 mb ++ modifyTexcoords (first (1 -)) (faceNorth (0,0) (1,1) (13/16) mb) ++
+door mt mb d ns = cull False ns . map (second $ rotateZ corner) $
+    case div d 8 of 0 -> modifyTexcoords (if mirror then first (1 -) else id) (faceSouth (0,0) (1,1) 0 mb) ++
+                         modifyTexcoords (if mirror then id else first (1 -)) (faceNorth (0,0) (1,1) (13/16) mb) ++
                          faceWest (13/16,0) (1,1) 0 mb ++ faceEast (0,0) (3/16,1) 0 mb ++
                          faceBottom (13/16,0) (1,1) 0 mb
-                    _ -> faceSouth (0,0) (1,1) 0 mt ++ modifyTexcoords (first (1 -)) (faceNorth (0,0) (1,1) (13/16) mt) ++
+                    _ -> modifyTexcoords (if mirror then first (1 -) else id) (faceSouth (0,0) (1,1) 0 mt) ++
+                         modifyTexcoords (if mirror then id else first (1 -)) (faceNorth (0,0) (1,1) (13/16) mt) ++
                          faceWest (13/16,0) (1,1) 0 mb ++ faceEast (0,0) (3/16,1) 0 mb ++
                          faceTop (13/16,0) (1,1) 0 mb
+    where corner = mod (2 + mod d 4 + div (mod d 8) 4) 4
+          mirror = div (mod d 8) 4 == 1
 
 cake :: Int -> Neighbors -> [(String, Face)]
 cake d ns = cull False ns . map (second $ rotateZ 3) $
@@ -444,17 +470,17 @@ repeater d mb mt ns = cull True ns . map (second $ rotateZ (case mod d 4 of 0 ->
 sign :: Int -> String -> Neighbors -> [(String, Face)]
 sign d m ns = map (second $ freeRotateZ (-pi / 2 - fromIntegral d * pi / 8)) $
     modifyVertices (\(x,y,z) -> (x,y-11/24,z+1/3)) (wallSign 5 m ns) ++
-    [(m, [((-13/24,-13/24,  0),(   0,1/16),south ), ((-11/24,-13/24,  0),(1/32,1/16),south ), ((-11/24,-13/24,14/24),(1/32,1/2),south ), ((-13/24,-13/24,14/24),(   0,1/2),south )])] ++
-    [(m, [((-11/24,-11/24,  0),(1/32,1/16),north ), ((-13/24,-11/24,  0),(2/32,1/16),north ), ((-13/24,-11/24,14/24),(2/32,1/2),north ), ((-11/24,-11/24,14/24),(1/32,1/2),north )])] ++
-    [(m, [((-11/24,-13/24,  0),(2/32,1/16),east  ), ((-11/24,-11/24,  0),(3/32,1/16),east  ), ((-11/24,-11/24,14/24),(3/32,1/2),east  ), ((-11/24,-13/24,14/24),(2/32,1/2),east  )])] ++
-    [(m, [((-13/24,-11/24,  0),(3/32,1/16),west  ), ((-13/24,-13/24,  0),(4/32,1/16),west  ), ((-13/24,-13/24,14/24),(4/32,1/2),west  ), ((-13/24,-11/24,14/24),(3/32,1/2),west  )])]
+    [(m, [((-13/24,-13/24,0),(   0,1/16),south ), ((-11/24,-13/24,0),(1/32,1/16),south ), ((-11/24,-13/24,14/24),(1/32,1/2),south ), ((-13/24,-13/24,14/24),(   0,1/2),south )])] ++
+    [(m, [((-11/24,-11/24,0),(1/32,1/16),north ), ((-13/24,-11/24,0),(2/32,1/16),north ), ((-13/24,-11/24,14/24),(2/32,1/2),north ), ((-11/24,-11/24,14/24),(1/32,1/2),north )])] ++
+    [(m, [((-11/24,-13/24,0),(2/32,1/16),east  ), ((-11/24,-11/24,0),(3/32,1/16),east  ), ((-11/24,-11/24,14/24),(3/32,1/2),east  ), ((-11/24,-13/24,14/24),(2/32,1/2),east  )])] ++
+    [(m, [((-13/24,-11/24,0),(3/32,1/16),west  ), ((-13/24,-13/24,0),(4/32,1/16),west  ), ((-13/24,-13/24,14/24),(4/32,1/2),west  ), ((-13/24,-11/24,14/24),(3/32,1/2),west  )])]
 
 wallSign :: Int -> String -> Neighbors -> [(String, Face)]
 wallSign d m ns = cull True ns . map (second $ rotateZ (case d of 2 -> 3; 3 -> 1; 4 -> 2; _ -> 0)) $
-    [(m, [((-1,-1/12,1/4),( 1/32, 1/ 2),south ), (( 0,-1/12,1/4),(13/32, 1/ 2),south ), (( 0,-1/12,3/4),(13/32,15/16),south ), ((-1,-1/12,3/4),( 1/32,15/16),south )])] ++
-    [(m, [(( 0,    0,1/4),(13/32, 1/ 2),north ), ((-1,    0,1/4),(25/32, 1/ 2),north ), ((-1,    0,3/4),(25/32,15/16),north ), (( 0,    0,3/4),(13/32,15/16),north )])] ++
-    [(m, [(( 0,-1/12,1/4),(    0, 1/ 2),east  ), (( 0,    0,1/4),( 1/32, 1/ 2),east  ), (( 0,    0,3/4),( 1/32,15/16),east  ), (( 0,-1/12,3/4),(    0,15/16),east  )])] ++
-    [(m, [((-1,    0,1/4),(    0, 1/ 2),west  ), ((-1,-1/12,1/4),( 1/32, 1/ 2),west  ), ((-1,-1/12,3/4),( 1/32,15/16),west  ), ((-1,    0,3/4),(    0,15/16),west  )])] ++
+    [(m, [((-1,-1/12,1/4),( 1/32, 9/16),south ), (( 0,-1/12,1/4),(13/32, 9/16),south ), (( 0,-1/12,3/4),(13/32,15/16),south ), ((-1,-1/12,3/4),( 1/32,15/16),south )])] ++
+    [(m, [(( 0,    0,1/4),(13/32, 9/16),north ), ((-1,    0,1/4),(25/32, 9/16),north ), ((-1,    0,3/4),(25/32,15/16),north ), (( 0,    0,3/4),(13/32,15/16),north )])] ++
+    [(m, [(( 0,-1/12,1/4),(    0, 9/16),east  ), (( 0,    0,1/4),( 1/32, 9/16),east  ), (( 0,    0,3/4),( 1/32,15/16),east  ), (( 0,-1/12,3/4),(    0,15/16),east  )])] ++
+    [(m, [((-1,    0,1/4),(    0, 9/16),west  ), ((-1,-1/12,1/4),( 1/32, 9/16),west  ), ((-1,-1/12,3/4),( 1/32,15/16),west  ), ((-1,    0,3/4),(    0,15/16),west  )])] ++
     [(m, [((-1,-1/12,3/4),( 1/32,15/16),top   ), (( 0,-1/12,3/4),(13/32,15/16),top   ), (( 0,    0,3/4),(13/32,    1),top   ), ((-1,    0,3/4),( 1/32,    1),top   )])] ++
     [(m, [((-1,-1/12,3/4),( 1/32,15/16),bottom), (( 0,-1/12,3/4),(13/32,15/16),bottom), (( 0,    0,3/4),(13/32,    1),bottom), ((-1,    0,3/4),( 1/32,    1),bottom)])]
 
@@ -468,3 +494,18 @@ lever d _ = map (second $ rotateZ (case mod d 8 of 1 -> 1; 2 -> 3; 3 -> 2; 4 -> 
 
 redstone :: String -> String -> Neighbors -> [(String, Face)]
 redstone _ mc _ = trackFlat mc
+
+mushroom :: Int -> String -> Neighbors -> [(String, Face)]
+mushroom d m ns = cull True ns $ case d of
+    0 -> box (uniform t) ((0,0,0),(1,1,1))
+    1 -> box (m,m,t,t,m,t) ((0,0,0),(1,1,1))
+    2 -> box (t,m,t,t,m,t) ((0,0,0),(1,1,1))
+    3 -> box (t,m,m,t,m,t) ((0,0,0),(1,1,1))
+    4 -> box (m,t,t,t,m,t) ((0,0,0),(1,1,1))
+    5 -> box (t,t,t,t,m,t) ((0,0,0),(1,1,1))
+    6 -> box (t,t,m,t,m,t) ((0,0,0),(1,1,1))
+    7 -> box (m,t,t,m,m,t) ((0,0,0),(1,1,1))
+    8 -> box (t,t,t,m,m,t) ((0,0,0),(1,1,1))
+    9 -> box (t,t,m,m,m,t) ((0,0,0),(1,1,1))
+    _ -> blockSTB "Mushroom_Stalk_Side" t t ns
+    where t = "Mushroom_Stalk_Top"

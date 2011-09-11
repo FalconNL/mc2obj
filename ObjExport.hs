@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, BangPatterns #-}
 
-module ObjExport (export, ExportOptions(..)) where
+module ObjExport (export, spawnChunk, ExportOptions(..)) where
 
 import Control.Arrow
 import qualified Data.ByteString as B
@@ -63,6 +63,11 @@ chunkData nbt = (getArray $ navigate ["Level", "Blocks"] nbt,
                  getArray $ navigate ["Level", "Data"] nbt)
     where getArray ~(Just (TAG_Byte_Array a)) = a
 
+spawnChunk :: Tag -> (Int, Int)
+spawnChunk nbt = (div (getInt $ navigate ["Data", "SpawnX"] nbt) chunkW,
+                  div (getInt $ navigate ["Data", "SpawnZ"] nbt) chunkW)
+    where getInt ~(Just (TAG_Int a)) = fromIntegral a
+
 chunkGeom :: ExportOptions -> BlockDefs -> BorderedChunk -> (Int, Int) -> (Int, Int) -> IO BC.ByteString
 chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) (ci,cs) = do
     let blockLookup (x,y,z) = if y > 127 then (0,0) else
@@ -74,13 +79,13 @@ chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) (ci,cs) = do
                     case (compare cX $ div x chunkW, compare cZ $ div z chunkW) of
                          (LT,_) -> s; (GT,_) -> n; (_,LT) -> w; (_,GT) -> e; _ -> c
     case c of
-        Nothing -> do putStrLn $ printf "%*d/%d: Skipping chunk (%d, %d): chunk not in world" (length $ show cs) ci cs cX cZ 
+        Nothing -> do putStrLn $ printf "%*d/%d: Skipping chunk (%d, %d): not generated yet" (length $ show cs) ci cs cX cZ 
                       return ""
         _       -> do
             let faces = concat [ maybe [] (\f -> map (second $ map (\((vx,vy,vz),vt,vn) ->
                                                       ((vx-fromIntegral z,vy-fromIntegral x,vz+fromIntegral y),vt,vn))) $
-                                   f (snd $ blockLookup (x,y,z)) (\(bx,by,bz) -> blockLookup (x+bx,y+by,z+bz)))
-                                   (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
+                                                 f (snd $ blockLookup (x,y,z)) (\(bx,by,bz) -> blockLookup (x+bx,y+by,z+bz)))
+                                 (I.lookup (fst $ blockLookup (x,y,z)) blockDefs)
                                | x' <- [0..chunkW - 1]
                                , y' <- [max 0 (yFrom options)..min (chunkH - 1) (yTo options)]
                                , z' <- [0..chunkW - 1]
@@ -88,8 +93,9 @@ chunkGeom options blockDefs (c,n,e,s,w) (cX,cZ) (ci,cs) = do
             let ((!vm, !tm, !nm), !geom) = foldl' (\a matGroup -> second (BC.pack (printf "\nusemtl %s\n" . fst $ head matGroup) `B.append`) $
                     foldr (\(_, f) (vs, gs) -> addFace (vs, gs) f) a matGroup) ((M.empty, M.empty, M.empty), B.empty) $ groupOn fst faces
             putStrLn $ printf "%*d/%d: Processing chunk (%d, %d)" (length $ show cs) ci cs cX cZ
-            return $! B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ,
-                                indexString "v"  (\(x,y,z) -> [x,y,z]) vm, 
+            return $! if null faces then "" else
+                      B.concat [BC.pack $ printf "g chunk.%d.%d\n\n" cX cZ,
+                                indexString "v"  (\(x,y,z) -> [x,y,z]) vm,
                                 indexString "vt" (\(x,y)   -> [x,y]  ) tm,
                                 indexString "vn" (\(x,y,z) -> [x,y,z]) nm,
                                 geom]

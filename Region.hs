@@ -1,6 +1,6 @@
-module Region (Tag(..), loadRegion, navigate) where
+module Region (Tag(..), loadNBT, loadRegion, navigate) where
 
---import qualified Codec.Compression.GZip as G
+import qualified Codec.Compression.GZip as G
 import Codec.Compression.Zlib
 import Control.Applicative
 import Control.Monad
@@ -22,11 +22,12 @@ getNBT :: Get Tag
 getNBT = byte >> string >> tag 10
 
 getRegion :: Get (I.IntMap Tag)
-getRegion = do cLengths <- (\y -> zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
-                                          (tail y ++ [(\((o,l),i) -> ((o+l,l),i)) $ last y]) y) .
-                           sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (`divMod` 256) <$> 
-                           replicateM 1024 int <* replicateM 1024 int
-               I.fromList <$> mapM (\(i, y) -> (,) i . run getNBT <$> chunk y) cLengths
+getRegion = do offsets <- sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (`divMod` 256) <$> 
+                          replicateM 1024 int <* replicateM 1024 int
+               let cLengths = zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
+                                      (tail offsets ++ [(\((o,l),i) -> ((o+l,l),i)) $ last offsets]) offsets
+               getByteString ((* 4096) . (subtract 2) . fromIntegral . fst . fst $ head offsets) *>
+                   (I.fromList <$> mapM (\(i, y) -> (,) i . run getNBT <$> chunk y) cLengths)
 
 tag :: Word8 -> Get Tag
 tag  0 = return TAG_End
@@ -60,8 +61,8 @@ loadRegion file = doesFileExist file >>=
 run :: Get a -> B.ByteString -> a
 run p = either error id . fst . runGet p
 
---loadNBT :: FilePath -> IO Tag
---loadNBT file = run getNBT . B.concat . BL.toChunks . G.decompress <$> BL.readFile file
+loadNBT :: FilePath -> IO Tag
+loadNBT file = run getNBT . B.concat . BL.toChunks . G.decompress <$> BL.readFile file
 
 navigate :: [B.ByteString] -> Tag -> Maybe Tag
 navigate xs ct = foldl' (\a x -> ref x =<< a) (Just ct) xs where

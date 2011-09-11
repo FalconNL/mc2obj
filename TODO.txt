@@ -1,6 +1,12 @@
+add remaining 1.8 blocks
+
 try to duplicate copyFile bug on Debian64
 
 fix redstone
+
+export lights
+
+use biome colors for grass/leaves
 
 parallelize program by parMapping chunkGeom over chunks
     (using dph-base or repa) and B.concatting at the end
