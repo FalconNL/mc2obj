@@ -150,7 +150,7 @@ blockDefs = I.fromList
     ,( 99, \d    -> mushroom d "Mushroom_Cap_Brown")
     ,(100, \d    -> mushroom d "Mushroom_Cap_Red")
     ,(101, \_    -> block "Unknown")
-    ,(102, \_    -> block "Unknown")
+    ,(102, \_    -> block "Glass") --TODO: Actual geometry
     ,(103, \_    -> blockSTB "Melon_Side" "Melon_Top" "Melon_Top")
     ,(104, \d _  -> modifyVertices (\(x,y,z) -> (x,y,z - (7 - fromIntegral d) / 8 )) $ plant "Stalk_Pumpkin")
     ,(105, \d _  -> modifyVertices (\(x,y,z) -> (x,y,z - (7 - fromIntegral d) / 8 )) $ plant "Stalk_Melon")
@@ -509,3 +509,7 @@ mushroom d m ns = cull True ns $ case d of
     9 -> box (t,t,m,m,m,t) ((0,0,0),(1,1,1))
     _ -> blockSTB "Mushroom_Stalk_Side" t t ns
     where t = "Mushroom_Stalk_Top"
+
+-- ironBars m ns = 
+--     where neighbors = map ((== 101) . fst . ns)) [north,east,south,west]
+--           dirs = if not (and neighbors) then map not neighbors else neighbors

@@ -1,4 +1,29 @@
+Make separate material for flowing water
+
+Add Riptide note in readme
+
+Fix dirt_grass color in texsplit
+
 add remaining 1.8 blocks
+
+look at size of chests
+
+1.9: swamps grass and tree color?
+     mushroom biome grass color
+     swamp water
+     snowmen?
+     lily pads
+     nether brick
+     nether brick fence
+     nether brick stairs
+     nether wart
+     blaze spawner
+     fences connect to solid blocks
+     enchantment table
+     cauldron
+     brewing stand
+     strange crystal-like blocks
+     strange black block
 
 try to duplicate copyFile bug on Debian64
 

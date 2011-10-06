@@ -21,7 +21,7 @@ echo Identified texture pack as ${w}x${w}
 
 echo Converting row 1...
 
-convert terrain.png -crop ${w}x${w}+${o0}+${o0} -fill 'hsl(27%,90%,40%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/grass_top.png'
+convert terrain.png -crop ${w}x${w}+${o0}+${o0} -fill 'hsl(27%,80%,30%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/grass_top.png'
 convert terrain.png -crop ${w}x${w}+${o1}+${o0} 'png24:tex/stone.png'
 convert terrain.png -crop ${w}x${w}+${o2}+${o0} 'png24:tex/dirt.png'
 convert terrain.png -crop ${w}x${w}+${o3}+${o0} 'png24:tex/dirt_grass.png'
@@ -72,7 +72,7 @@ convert terrain.png -crop ${w}x${w}+${o3}+${o2} 'png24:tex/bookshelf.png'
 convert terrain.png -crop ${w}x${w}+${o4}+${o2} 'png24:tex/moss_stone.png'
 convert terrain.png -crop ${w}x${w}+${o5}+${o2} 'png24:tex/obsidian.png'
 #
-convert terrain.png -crop ${w}x${w}+${o7}+${o2} -fill 'hsl(27%,90%,20%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/tall_grass.png'
+convert terrain.png -crop ${w}x${w}+${o7}+${o2} -fill 'hsl(27%,80%,30%)' -colorize 50,50,50 -brightness-contrast 0x+10 'png24:tex/tall_grass.png'
 convert terrain.png -crop ${w}x${w}+${o7}+${o2} -channel A -negate -separate 'png32:tex/tall_grass_alpha.png'
 #
 convert terrain.png -crop ${w}x${w}+${o9}+${o2} 'png24:tex/chest_left_front.png'

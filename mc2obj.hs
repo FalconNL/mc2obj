@@ -38,7 +38,7 @@ mc2obj = Args { objFolder    = "export" &= name "o"    &= help "The location of 
               } &= summary version
 
 version :: String
-version = "mc2obj v0.6\nA program to convert Minecraft worlds to .obj files\nWritten by Remco Niemeijer (2011)"
+version = "mc2obj v0.6.5\nA program to convert Minecraft worlds to .obj files\nWritten by Remco Niemeijer (2011)"
 
 main :: IO ()
 main = do arguments <- E.onException (cmdArgs mc2obj) (hFlush stderr >> putStrLn "\nUse mc2obj -? for help information")

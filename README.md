@@ -1,5 +1,5 @@
-mc2obj v0.6
-===========
+mc2obj v0.6.5
+=============
 
 mc2obj is a tool to convert part of a Minecraft world to a .obj file, which
 can be imported into a 3D package such as 3ds max or Blender to make a

@@ -24,6 +24,7 @@ getNBT = byte >> string >> tag 10
 getRegion :: Get (I.IntMap Tag)
 getRegion = do offsets <- sort . filter ((> 0) . fst . fst) . flip zip [0..] . map (`divMod` 256) <$> 
                           replicateM 1024 int <* replicateM 1024 int
+               if null offsets then return I.empty else do
                let cLengths = zipWith (\((o1,_),_) ((o2,_),i) -> (i, o1 - o2))
                                       (tail offsets ++ [(\((o,l),i) -> ((o+l,l),i)) $ last offsets]) offsets
                getByteString ((* 4096) . (subtract 2) . fromIntegral . fst . fst $ head offsets) *>
