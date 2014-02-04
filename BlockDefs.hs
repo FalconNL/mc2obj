@@ -188,7 +188,7 @@ hide self c t  = (self && c == t) || IS.member (fromIntegral t) solidIDs
 solidIDs :: IS.IntSet
 solidIDs = IS.fromAscList $ [1..5] ++ [7] ++ [12..17] ++ [19] ++ [21..25] ++
                             [35,36] ++ [41..43] ++ [45..49] ++ [54,56,57,58] ++
-                            [60..62] ++ [73,74,78,79,80,82,84] ++ [86..89] ++ [91,95]
+                            [60..62] ++ [73,74,79,80,82,84] ++ [86..89] ++ [91,95]
 
 north, east, south, west, top, bottom :: Vertex
 north  = ( 0, 1, 0)
